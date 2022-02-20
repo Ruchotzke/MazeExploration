@@ -491,6 +491,8 @@ MonoBehaviour:
   ConnectionDistance: 1
   pf_Waypoint: {fileID: 5910199848373282456, guid: b3fd0034894a3544aa17388f4c0a9002,
     type: 3}
+  DrawBaseGrid: 1
+  DrawMazeGrid: 0
 --- !u!4 &1736596724
 Transform:
   m_ObjectHideFlags: 0
