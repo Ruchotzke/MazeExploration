@@ -102,4 +102,33 @@ public class GeometryTests
 
         Assert.IsNull(triangle.GetCircumcircle());
     }
+
+    [Test]
+    public void TestInteriorofCircleTrue()
+    {
+        Circle c = new Circle(float2.zero, 1.0f);
+
+        Assert.IsTrue(c.PointLiesInside(float2.zero));
+        Assert.IsTrue(c.PointLiesInside(new float2(0.5f, 0.5f)));
+        Assert.IsTrue(c.PointLiesInside(new float2(-0.5f, -0.1f)));
+    }
+    
+    [Test]
+    public void TestInteriorofCircleFalse()
+    {
+        Circle c = new Circle(new float2(55.0f, 2.3f), 1.0f);
+
+        Assert.IsFalse(c.PointLiesInside(float2.zero));
+        Assert.IsFalse(c.PointLiesInside(new float2(0.5f, 0.5f)));
+        Assert.IsFalse(c.PointLiesInside(new float2(-0.5f, -0.1f)));
+    }
+    
+    [Test]
+    public void TestInteriorofCircleEdge()
+    {
+        Circle c = new Circle(float2.zero, 1.0f);
+
+        Assert.IsTrue(c.PointLiesInside(new float2(1.0f, 0.0f)));
+        Assert.IsTrue(c.PointLiesInside(new float2(0.0f, 1f)));
+    }
 }

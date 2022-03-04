@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using Unity.Mathematics;
 
 
@@ -83,6 +84,15 @@ namespace Delaunay.Geometry
                 float radius = (a.x - center.x) * (a.x - center.x) + (a.y - center.y) * (a.y - center.y);
                 return new Circle(center, radius);
             }
+        }
+
+        /// <summary>
+        /// Get the edges of this triangle.
+        /// </summary>
+        /// <returns></returns>
+        public Edge[] GetEdges()
+        {
+            return new Edge[3] {new Edge(a, b), new Edge(b, c), new Edge(c, a)};
         }
 
         public override string ToString()
