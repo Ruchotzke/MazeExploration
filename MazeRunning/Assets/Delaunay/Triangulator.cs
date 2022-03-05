@@ -3,6 +3,7 @@ using System.Security;
 using Delaunay.Geometry;
 using Unity.Mathematics;
 using UnityEngine;
+using Random = UnityEngine.Random;
 
 namespace Delaunay.Triangulation
 {
@@ -12,9 +13,14 @@ namespace Delaunay.Triangulation
     /// </summary>
     public class Triangulator
     {
-        public static float2 SUPER_A = new float2(0f, -20f);
-        public static float2 SUPER_B = new float2(-20f, 20f);
-        public static float2 SUPER_C = new float2(20f, 20f);
+        /// <summary>
+        /// The amount of "jitter" applied to vertices to avoid pure colinearity.
+        /// </summary>
+        private const float JitterAmount = 0.01f;
+        
+        public static float2 SUPER_A = new float2(1f, -23f);
+        public static float2 SUPER_B = new float2(-22f, 22f);
+        public static float2 SUPER_C = new float2(23f, 21f);
         
         private Mesh mesh;
 
@@ -38,12 +44,11 @@ namespace Delaunay.Triangulation
             mesh.AddTriangle(superTriangle);
             
             /* Incrementally build a triangulation */
-            int count = 0;
             foreach (var vertex in vertices)
             {
                 /* Debug */
-                Debug.Log(vertex);
-                Debug.Log(string.Join(",\n", mesh.Triangles));
+                Debug.Log("Processing vertex: " + vertex);
+                Debug.Log(string.Join("\n", mesh.Triangles));
                 
                 /* Find all triangles where this point lies in the circumcircle */
                 List<Triangle> badTriangles = new List<Triangle>();
@@ -86,7 +91,6 @@ namespace Delaunay.Triangulation
                         /* If the edge should not be ignored, add it to the list */
                         if (!ignoreEdge)
                         {
-                            Debug.Log("Unique Edge: " + edge);
                             holeEdges.Add(edge);
                         }
                     }
@@ -104,15 +108,8 @@ namespace Delaunay.Triangulation
                 {
                     mesh.Triangles.Add(new Triangle(edge.a, edge.b, vertex));
                 }
-                
-                /* Checkpoint the number of triangles in the mesh */
-                count++;
-                // if (count >= 2) return mesh;
-                Debug.Log("TRIANGLES: " + mesh.Triangles.Count);
             }
-            
-            return mesh;
-            
+
             /* Remove ANY triangles involving the super triangle vertices */
             List<Triangle> superTriangles = new List<Triangle>();
             foreach (var tri in mesh.Triangles)
@@ -149,7 +146,7 @@ namespace Delaunay.Triangulation
         /// <param name="vertex"></param>
         public void AddVertex(float2 vertex)
         {
-            vertices.Add(vertex);
+            vertices.Add(JitterVertex(vertex));
         }
 
         /// <summary>
@@ -159,6 +156,11 @@ namespace Delaunay.Triangulation
         public void AddVertices(List<float2> verts)
         {
             vertices.AddRange(verts);
+        }
+
+        private float2 JitterVertex(float2 input)
+        {
+            return new float2(input.x + Random.Range(-JitterAmount, JitterAmount), input.y + Random.Range(-JitterAmount, JitterAmount));
         }
     }
 }

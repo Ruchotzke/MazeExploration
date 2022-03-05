@@ -13,13 +13,16 @@ namespace Delaunay.Triangulation
         private void Awake()
         {
             triangulator = new Triangulator();
-            triangulator.AddVertex(new float2(0.0f, 0.0f));
-            triangulator.AddVertex(new float2(0.0f, 1.0f));
+            triangulator.AddVertex(new float2(1.0f, 2.5f));
+            triangulator.AddVertex(new float2(3.0f, 2.5f));
             triangulator.AddVertex(new float2(1.0f, 1.0f));
             triangulator.AddVertex(new float2(1.0f, 0.0f));
+            triangulator.AddVertex(new float2(0.0f, 1.0f));
+            triangulator.AddVertex(new float2(1.0f, -1.0f));
+            triangulator.AddVertex(new float2(-1.0f, -1.0f));
             mesh = triangulator.GenerateTriangulation();
             
-            Debug.Log("Mesh generated: " + mesh.Triangles.Count + " triangles used.");
+            Debug.Log("Mesh generated: " + mesh.Triangles.Count + " triangles used for " + triangulator.vertices.Count + " points.");
         }
 
         private void OnDrawGizmos()

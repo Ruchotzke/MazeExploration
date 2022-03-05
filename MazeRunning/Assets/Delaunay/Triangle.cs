@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using Unity.Mathematics;
+using UnityEngine;
 
 
 namespace Delaunay.Geometry
@@ -52,6 +53,13 @@ namespace Delaunay.Geometry
         public bool PointLiesInInteriorOfCircumcircle(float2 point)
         {
             Circle circumcircle = GetCircumcircle();
+
+            if (circumcircle == null)
+            {
+                Debug.LogError("Can't find the circumcircle of a colinear triangle. " + ToString());
+                return false;
+            }
+            
             return circumcircle.PointLiesInside(point);
         }
 
@@ -81,7 +89,7 @@ namespace Delaunay.Geometry
             {
                 /* We can compute a circumcircle */
                 float2 center = new float2((D * E - B * F) / G, (A * F - C * E) / G);
-                float radius = (a.x - center.x) * (a.x - center.x) + (a.y - center.y) * (a.y - center.y);
+                float radius = Mathf.Sqrt((a.x - center.x) * (a.x - center.x) + (a.y - center.y) * (a.y - center.y));
                 return new Circle(center, radius);
             }
         }
