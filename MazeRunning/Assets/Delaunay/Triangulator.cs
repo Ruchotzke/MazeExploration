@@ -18,9 +18,13 @@ namespace Delaunay.Triangulation
         /// </summary>
         private const float JitterAmount = 0.01f;
         
-        public static float2 SUPER_A = new float2(1f, -23f);
-        public static float2 SUPER_B = new float2(-22f, 22f);
-        public static float2 SUPER_C = new float2(23f, 21f);
+        // public static float2 SUPER_A = new float2(1f, -23f);
+        // public static float2 SUPER_B = new float2(-22f, 22f);
+        // public static float2 SUPER_C = new float2(23f, 21f);
+        
+        public static float2 SUPER_A = new float2(-25f, -20f);
+        public static float2 SUPER_B = new float2(0, 22f);
+        public static float2 SUPER_C = new float2(25f, -20f);
         
         private Mesh mesh;
 
@@ -47,9 +51,8 @@ namespace Delaunay.Triangulation
             foreach (var vertex in vertices)
             {
                 /* Debug */
-                Debug.Log("Processing vertex: " + vertex);
-                Debug.Log(string.Join("\n", mesh.Triangles));
-                
+                // Debug.Log("Processing vertex: " + vertex);
+
                 /* Find all triangles where this point lies in the circumcircle */
                 List<Triangle> badTriangles = new List<Triangle>();
                 foreach (var triangle in mesh.Triangles)
@@ -59,6 +62,7 @@ namespace Delaunay.Triangulation
                         badTriangles.Add(triangle);
                     }
                 }
+                // Debug.Log("Bad triangles: " + string.Join("\n", badTriangles));
                 
                 /* Find the points which we need to triangulate to fill the new hole */
                 List<Edge> holeEdges = new List<Edge>();
@@ -81,6 +85,7 @@ namespace Delaunay.Triangulation
                                 {
                                     /* This is not an edge edge */
                                     ignoreEdge = true;
+                                    // Debug.Log("Dissolve edge: " + edge);
                                     break;
                                 }
                             }
@@ -108,6 +113,9 @@ namespace Delaunay.Triangulation
                 {
                     mesh.Triangles.Add(new Triangle(edge.a, edge.b, vertex));
                 }
+                
+                /* remark on the new set of triangles */
+                // Debug.Log("NEW TRIS: " + string.Join("\n", mesh.Triangles));
             }
 
             /* Remove ANY triangles involving the super triangle vertices */

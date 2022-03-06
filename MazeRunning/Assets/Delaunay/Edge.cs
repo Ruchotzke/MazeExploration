@@ -19,7 +19,7 @@ namespace Delaunay.Geometry
 
         protected bool Equals(Edge other)
         {
-            return a.Equals(other.a) && b.Equals(other.b); //|| a.Equals(other.b) && b.Equals(other.a); //edges can be reversed and still equivalent
+            return a.Equals(other.a) && b.Equals(other.b) || a.Equals(other.b) && b.Equals(other.a); //edges can be reversed and still equivalent
         }
 
         public override bool Equals(object obj)

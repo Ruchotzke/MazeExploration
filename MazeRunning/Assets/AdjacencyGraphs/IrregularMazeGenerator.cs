@@ -1,10 +1,13 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using Delaunay.Triangulation;
+using Unity.Mathematics;
 using Unity.VisualScripting;
 using UnityEngine;
 using UnityEngine.Networking;
 using Utilities;
+using Mesh = Delaunay.Triangulation.Mesh;
 
 public class IrregularMazeGenerator : MonoBehaviour
 {
@@ -23,6 +26,8 @@ public class IrregularMazeGenerator : MonoBehaviour
     private List<AdjacencyNode> samples;
     private Dictionary<AdjacencyNode, List<(AdjacencyNode a, AdjacencyNode b)>> edges;
 
+    private Mesh mesh;
+
     private void Start()
     {
         /* Perform a sampling operation */
@@ -31,56 +36,64 @@ public class IrregularMazeGenerator : MonoBehaviour
 
         samples = sampler.SampleWithAdjacency(Vector2.zero, ConnectionDistance);
 
-        Debug.Log("Starting overlap detection.");
-        int overlapCount = 0;
-        edges = new Dictionary<AdjacencyNode, List<(AdjacencyNode a, AdjacencyNode b)>>();
+        Triangulator tri = new Triangulator();
         foreach (var sample in samples)
         {
-            edges.Add(sample, new List<(AdjacencyNode a, AdjacencyNode b)>());
-            List<AdjacencyNode> toRemove = new List<AdjacencyNode>();
-            foreach (var neighbor in sample.Neighbors)
-            {
-                /* check to see if this edge overlaps with any other edges. if it does, ignore it */
-                bool overlapFound = false;
-                foreach (var list in edges.Values)
-                {
-                    foreach (var line in list)
-                    {
-                        /* First, is this line the direct inverse? If so, we want to skip it */
-                        if (line.a == sample || line.a == neighbor)
-                        {
-                            continue;
-                        }
-                        
-                        Vector2 a = new Vector2(sample.position.x, sample.position.z);
-                        Vector2 b = new Vector2(neighbor.position.x, neighbor.position.z);
-                        Vector2 c = new Vector2(line.a.position.x, line.a.position.z);
-                        Vector2 d = new Vector2(line.b.position.x, line.b.position.z);
-                        
-                        overlapFound = Utilities.Utilities.IsLineIntersecting(a, b, c, d, false);
-
-                        if (overlapFound)
-                        {
-                            overlapCount++;
-                            toRemove.Add(neighbor);
-                            break;
-                        }
-                    }
-
-                    if (overlapFound) break;
-                }
-                
-                if(!overlapFound) edges[sample].Add((sample, neighbor));
-            }
-            
-            /* Remove any overlapping neighbors */
-            foreach (var neighbor in toRemove)
-            {
-                sample.Neighbors.Remove(neighbor);
-                neighbor.Neighbors.Remove(sample);
-            }
+            tri.AddVertex(new float2(sample.position.x, sample.position.z));
         }
-        Debug.Log("Stopping overlap detection. " + overlapCount + " edges overlapping removed.");
+
+        mesh = tri.GenerateTriangulation();
+
+        // Debug.Log("Starting overlap detection.");
+        // int overlapCount = 0;
+        // edges = new Dictionary<AdjacencyNode, List<(AdjacencyNode a, AdjacencyNode b)>>();
+        // foreach (var sample in samples)
+        // {
+        //     edges.Add(sample, new List<(AdjacencyNode a, AdjacencyNode b)>());
+        //     List<AdjacencyNode> toRemove = new List<AdjacencyNode>();
+        //     foreach (var neighbor in sample.Neighbors)
+        //     {
+        //         /* check to see if this edge overlaps with any other edges. if it does, ignore it */
+        //         bool overlapFound = false;
+        //         foreach (var list in edges.Values)
+        //         {
+        //             foreach (var line in list)
+        //             {
+        //                 /* First, is this line the direct inverse? If so, we want to skip it */
+        //                 if (line.a == sample || line.a == neighbor)
+        //                 {
+        //                     continue;
+        //                 }
+        //                 
+        //                 Vector2 a = new Vector2(sample.position.x, sample.position.z);
+        //                 Vector2 b = new Vector2(neighbor.position.x, neighbor.position.z);
+        //                 Vector2 c = new Vector2(line.a.position.x, line.a.position.z);
+        //                 Vector2 d = new Vector2(line.b.position.x, line.b.position.z);
+        //                 
+        //                 overlapFound = Utilities.Utilities.IsLineIntersecting(a, b, c, d, false);
+        //
+        //                 if (overlapFound)
+        //                 {
+        //                     overlapCount++;
+        //                     toRemove.Add(neighbor);
+        //                     break;
+        //                 }
+        //             }
+        //
+        //             if (overlapFound) break;
+        //         }
+        //         
+        //         if(!overlapFound) edges[sample].Add((sample, neighbor));
+        //     }
+        //     
+        //     /* Remove any overlapping neighbors */
+        //     foreach (var neighbor in toRemove)
+        //     {
+        //         sample.Neighbors.Remove(neighbor);
+        //         neighbor.Neighbors.Remove(sample);
+        //     }
+        // }
+        // Debug.Log("Stopping overlap detection. " + overlapCount + " edges overlapping removed.");
 
         /* Do the backtrace */
         DoBacktrace(samples[0]);
@@ -146,35 +159,52 @@ public class IrregularMazeGenerator : MonoBehaviour
 
     private void OnDrawGizmosSelected()
     {
+        // if (samples != null)
+        // {
+        //     /* Draw a sphere for each sample */
+        //     foreach (var sample in samples)
+        //     {
+        //         /* Draw this sample */
+        //         Gizmos.color = Color.red;
+        //         Gizmos.DrawSphere(sample.position, 0.1f);
+        //         
+        //         /* Draw the connections */
+        //         if (DrawBaseGrid)
+        //         {
+        //             Gizmos.color = Color.green;
+        //             foreach (var neighbor in sample.Neighbors)
+        //             {
+        //                 Gizmos.DrawLine(sample.position, neighbor.position);
+        //             }
+        //         }
+        //
+        //         /* Draw the path */
+        //         if (DrawMazeGrid)
+        //         {
+        //             Gizmos.color = Color.red;
+        //             foreach (var neighbor in sample.OpenNeighbors)
+        //             {
+        //                 Gizmos.DrawLine(sample.position, neighbor.position);
+        //             }
+        //         }
+        //         
+        //     }
+        // }
+
         if (samples != null)
         {
-            /* Draw a sphere for each sample */
+            Gizmos.color = Color.red;
             foreach (var sample in samples)
             {
-                /* Draw this sample */
-                Gizmos.color = Color.red;
                 Gizmos.DrawSphere(sample.position, 0.1f);
-                
-                /* Draw the connections */
-                if (DrawBaseGrid)
-                {
-                    Gizmos.color = Color.green;
-                    foreach (var neighbor in sample.Neighbors)
-                    {
-                        Gizmos.DrawLine(sample.position, neighbor.position);
-                    }
-                }
+            }
 
-                /* Draw the path */
-                if (DrawMazeGrid)
-                {
-                    Gizmos.color = Color.red;
-                    foreach (var neighbor in sample.OpenNeighbors)
-                    {
-                        Gizmos.DrawLine(sample.position, neighbor.position);
-                    }
-                }
-                
+            Gizmos.color = Color.green;
+            foreach (var tri in mesh.Triangles)
+            {
+                Gizmos.DrawLine(new Vector3(tri.a.x, 0, tri.a.y), new Vector3(tri.b.x, 0, tri.b.y));
+                Gizmos.DrawLine(new Vector3(tri.b.x, 0, tri.b.y), new Vector3(tri.c.x, 0, tri.c.y));
+                Gizmos.DrawLine(new Vector3(tri.c.x, 0, tri.c.y), new Vector3(tri.a.x, 0, tri.a.y));
             }
         }
     }

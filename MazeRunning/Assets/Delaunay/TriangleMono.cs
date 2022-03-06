@@ -2,6 +2,7 @@
 using Unity.Mathematics;
 using UnityEngine;
 using UnityEngine.Assertions.Must;
+using Random = UnityEngine.Random;
 
 namespace Delaunay.Triangulation
 {
@@ -13,13 +14,17 @@ namespace Delaunay.Triangulation
         private void Awake()
         {
             triangulator = new Triangulator();
-            triangulator.AddVertex(new float2(1.0f, 2.5f));
-            triangulator.AddVertex(new float2(3.0f, 2.5f));
-            triangulator.AddVertex(new float2(1.0f, 1.0f));
-            triangulator.AddVertex(new float2(1.0f, 0.0f));
-            triangulator.AddVertex(new float2(0.0f, 1.0f));
-            triangulator.AddVertex(new float2(1.0f, -1.0f));
-            triangulator.AddVertex(new float2(-1.0f, -1.0f));
+
+            for (int i = 0; i < 10; i++)
+            {
+                triangulator.AddVertex(new float2(Random.Range(0f, 10f), Random.Range(0f, 10f)));
+            }
+
+            // triangulator.AddVertex(new float2(0, 0));
+            // triangulator.AddVertex(new float2(0, 1));
+            // triangulator.AddVertex(new float2(1, 0));
+            // triangulator.AddVertex(new float2(1, 1));
+            
             mesh = triangulator.GenerateTriangulation();
             
             Debug.Log("Mesh generated: " + mesh.Triangles.Count + " triangles used for " + triangulator.vertices.Count + " points.");

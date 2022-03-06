@@ -104,6 +104,31 @@ public class GeometryTests
     }
 
     [Test]
+    public void GetCircumcircleTest1()
+    {
+        Triangle triangle = new Triangle(
+            new float2(2, -3),
+            new float2(8, 6),
+            new float2(8, -2));
+        
+        Assert.AreEqual(new float2(4.25f, 2), triangle.GetCircumcircle().center);
+        Assert.That(triangle.GetCircumcircle().radius, Is.EqualTo(5.482928f).Within(0.5f).Percent);
+    }
+    
+    [Test]
+    public void TestInteriorOfCircleOffset()
+    {
+        Triangle triangle = new Triangle(
+            new float2(2, -3),
+            new float2(8, 6),
+            new float2(8, -2));
+
+        Assert.IsTrue(triangle.PointLiesInInteriorOfCircumcircle(new float2(2, -3)));
+        Assert.IsTrue(triangle.PointLiesInInteriorOfCircumcircle(new float2(8, 5)));
+        Assert.IsTrue(triangle.PointLiesInInteriorOfCircumcircle(new float2(6, 0)));
+    }
+
+    [Test]
     public void TestInteriorofCircleTrue()
     {
         Circle c = new Circle(float2.zero, 1.0f);
