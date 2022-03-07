@@ -22,9 +22,9 @@ namespace Delaunay.Triangulation
         // public static float2 SUPER_B = new float2(-22f, 22f);
         // public static float2 SUPER_C = new float2(23f, 21f);
         
-        public static float2 SUPER_A = new float2(-25f, -20f);
-        public static float2 SUPER_B = new float2(0, 22f);
-        public static float2 SUPER_C = new float2(25f, -20f);
+        public static float2 SUPER_A = new float2(-250f, -200f);
+        public static float2 SUPER_B = new float2(0, 220f);
+        public static float2 SUPER_C = new float2(250f, -200f);
         
         private Mesh mesh;
 
@@ -155,6 +155,15 @@ namespace Delaunay.Triangulation
         public void AddVertex(float2 vertex)
         {
             vertices.Add(JitterVertex(vertex));
+        }
+
+        /// <summary>
+        /// Add a single vertex to the triangulator. uses Vector2 instead of float2.
+        /// </summary>
+        /// <param name="vertex"></param>
+        public void AddVertex(Vector2 vertex)
+        {
+            vertices.Add(new float2(vertex.x, vertex.y));
         }
 
         /// <summary>

@@ -19,7 +19,7 @@ MonoBehaviour:
     width: 1920
     height: 989
   m_ShowMode: 4
-  m_Title: Scene
+  m_Title: Hierarchy
   m_RootView: {fileID: 8}
   m_MinSize: {x: 875, y: 300}
   m_MaxSize: {x: 10000, y: 10000}
@@ -74,7 +74,7 @@ MonoBehaviour:
   m_MinSize: {x: 200, y: 100}
   m_MaxSize: {x: 16192, y: 8096}
   vertical: 0
-  controlID: 96
+  controlID: 75
 --- !u!114 &4
 MonoBehaviour:
   m_ObjectHideFlags: 52
@@ -99,7 +99,7 @@ MonoBehaviour:
   m_MinSize: {x: 300, y: 200}
   m_MaxSize: {x: 24288, y: 16192}
   vertical: 0
-  controlID: 94
+  controlID: 73
 --- !u!114 &5
 MonoBehaviour:
   m_ObjectHideFlags: 52
@@ -274,7 +274,7 @@ MonoBehaviour:
   m_MinSize: {x: 200, y: 200}
   m_MaxSize: {x: 16192, y: 16192}
   vertical: 1
-  controlID: 95
+  controlID: 74
 --- !u!114 &12
 MonoBehaviour:
   m_ObjectHideFlags: 52
@@ -299,7 +299,7 @@ MonoBehaviour:
   m_MinSize: {x: 200, y: 100}
   m_MaxSize: {x: 16192, y: 8096}
   vertical: 0
-  controlID: 18
+  controlID: 54
 --- !u!114 &13
 MonoBehaviour:
   m_ObjectHideFlags: 52
@@ -356,7 +356,7 @@ MonoBehaviour:
     m_LastAppliedPresetName: Default
     m_SaveData: []
   m_Spl:
-    ID: 2769
+    ID: 869
     splitterInitialOffset: 0
     currentActiveSplitter: -1
     realSizes:
@@ -423,7 +423,7 @@ MonoBehaviour:
       name: MazeRunning
       fullName: MazeRunning
       resultStatus: 1
-      duration: 0.0788053
+      duration: 0.0734757
       messages: 
       output: 
       stacktrace: 
@@ -439,7 +439,7 @@ MonoBehaviour:
       name: Tests.dll
       fullName: D:/Unity-Repo/MazeExploration/MazeRunning/Library/ScriptAssemblies/Tests.dll
       resultStatus: 1
-      duration: 0.0421643
+      duration: 0.0297198
       messages: 
       output: 
       stacktrace: 
@@ -455,7 +455,7 @@ MonoBehaviour:
       name: GeometryTests
       fullName: GeometryTests
       resultStatus: 1
-      duration: 0.0405682
+      duration: 0.0283031
       messages: 
       output: 
       stacktrace: 
@@ -471,7 +471,7 @@ MonoBehaviour:
       name: ConstructCircle
       fullName: GeometryTests.ConstructCircle
       resultStatus: 1
-      duration: 0.0198667
+      duration: 0.0119213
       messages: 
       output: 
       stacktrace: 
@@ -488,7 +488,7 @@ MonoBehaviour:
       name: ConstructTriangle
       fullName: GeometryTests.ConstructTriangle
       resultStatus: 1
-      duration: 0.0006134
+      duration: 0.0005399
       messages: 
       output: 
       stacktrace: 
@@ -505,7 +505,7 @@ MonoBehaviour:
       name: ConstructTriangleColinear
       fullName: GeometryTests.ConstructTriangleColinear
       resultStatus: 1
-      duration: 0.0018252
+      duration: 0.0015677
       messages: 
       output: 
       stacktrace: 
@@ -522,7 +522,7 @@ MonoBehaviour:
       name: ConstructTriangleWinding
       fullName: GeometryTests.ConstructTriangleWinding
       resultStatus: 1
-      duration: 0.0001736
+      duration: 0.0001707
       messages: 
       output: 
       stacktrace: 
@@ -539,7 +539,7 @@ MonoBehaviour:
       name: GetCircumcircleColinear
       fullName: GeometryTests.GetCircumcircleColinear
       resultStatus: 1
-      duration: 0.0003114
+      duration: 0.000307
       messages: 
       output: 
       stacktrace: 
@@ -556,7 +556,7 @@ MonoBehaviour:
       name: GetCircumcircleEquilateral
       fullName: GeometryTests.GetCircumcircleEquilateral
       resultStatus: 1
-      duration: 0.0005686
+      duration: 0.0005546
       messages: 
       output: 
       stacktrace: 
@@ -573,7 +573,24 @@ MonoBehaviour:
       name: GetCircumcircleEquilateralOffCenter
       fullName: GeometryTests.GetCircumcircleEquilateralOffCenter
       resultStatus: 1
-      duration: 0.0002727
+      duration: 0.000255
+      messages: 
+      output: 
+      stacktrace: 
+      notRunnable: 0
+      ignoredOrSkipped: 0
+      description: 
+      isSuite: 0
+      categories:
+      - Uncategorized
+      parentId: 1001
+      parentUniqueId: Tests.dll/[Tests][GeometryTests][suite]
+    - id: 1009
+      uniqueId: Tests.dll/GeometryTests/[Tests][GeometryTests.GetCircumcircleTest1]
+      name: GetCircumcircleTest1
+      fullName: GeometryTests.GetCircumcircleTest1
+      resultStatus: 1
+      duration: 0.0001744
       messages: 
       output: 
       stacktrace: 
@@ -590,7 +607,7 @@ MonoBehaviour:
       name: TestInteriorofCircleEdge
       fullName: GeometryTests.TestInteriorofCircleEdge
       resultStatus: 1
-      duration: 0.0004733
+      duration: 0.00037
       messages: 
       output: 
       stacktrace: 
@@ -607,7 +624,24 @@ MonoBehaviour:
       name: TestInteriorofCircleFalse
       fullName: GeometryTests.TestInteriorofCircleFalse
       resultStatus: 1
-      duration: 0.0003187
+      duration: 0.000273
+      messages: 
+      output: 
+      stacktrace: 
+      notRunnable: 0
+      ignoredOrSkipped: 0
+      description: 
+      isSuite: 0
+      categories:
+      - Uncategorized
+      parentId: 1001
+      parentUniqueId: Tests.dll/[Tests][GeometryTests][suite]
+    - id: 1010
+      uniqueId: Tests.dll/GeometryTests/[Tests][GeometryTests.TestInteriorOfCircleOffset]
+      name: TestInteriorOfCircleOffset
+      fullName: GeometryTests.TestInteriorOfCircleOffset
+      resultStatus: 1
+      duration: 0.0002599
       messages: 
       output: 
       stacktrace: 
@@ -624,7 +658,7 @@ MonoBehaviour:
       name: TestInteriorofCircleTrue
       fullName: GeometryTests.TestInteriorofCircleTrue
       resultStatus: 1
-      duration: 0.0001691
+      duration: 0.0001303
       messages: 
       output: 
       stacktrace: 
@@ -636,12 +670,12 @@ MonoBehaviour:
       - Uncategorized
       parentId: 1001
       parentUniqueId: Tests.dll/[Tests][GeometryTests][suite]
-    m_ResultText: GetCircumcircleEquilateral (0.001s)
+    m_ResultText: TestInteriorOfCircleOffset (0.000s)
     m_ResultStacktrace: 
     m_TestListState:
       scrollPos: {x: 0, y: 0}
-      m_SelectedIDs: c61f6173
-      m_LastClickedID: 1935744966
+      m_SelectedIDs: a02bb5de
+      m_LastClickedID: -558552160
       m_ExpandedIDs: d6ba0bdd70c0262922d23629ffffff7f
       m_RenameOverlay:
         m_UserAcceptedRename: 0
@@ -710,22 +744,22 @@ MonoBehaviour:
     m_SkipHidden: 0
     m_SearchArea: 1
     m_Folders:
-    - Assets/Delaunay/Tests
+    - Assets/Delaunay
     m_Globs: []
     m_OriginalText: 
   m_ViewMode: 1
   m_StartGridSize: 64
   m_LastFolders:
-  - Assets/Delaunay/Tests
+  - Assets/Delaunay
   m_LastFoldersGridSize: -1
   m_LastProjectPath: D:\Unity-Repo\MazeExploration\MazeRunning
   m_LockTracker:
     m_IsLocked: 0
   m_FolderTreeState:
     scrollPos: {x: 0, y: 0}
-    m_SelectedIDs: 22770000
-    m_LastClickedID: 30498
-    m_ExpandedIDs: 0000000056720000
+    m_SelectedIDs: 04740000
+    m_LastClickedID: 29700
+    m_ExpandedIDs: 00000000567200000474000000ca9a3bffffff7f
     m_RenameOverlay:
       m_UserAcceptedRename: 0
       m_Name: 
@@ -778,8 +812,8 @@ MonoBehaviour:
       m_Icon: {fileID: 0}
       m_ResourceFile: 
   m_ListAreaState:
-    m_SelectedInstanceIDs: 26770000
-    m_LastClickedInstanceID: 30502
+    m_SelectedInstanceIDs: f2710000
+    m_LastClickedInstanceID: 29170
     m_HadKeyboardFocusLastEvent: 1
     m_ExpandedInstanceIDs: c6230000
     m_RenameOverlay:
@@ -883,9 +917,9 @@ MonoBehaviour:
   m_SceneHierarchy:
     m_TreeViewState:
       scrollPos: {x: 0, y: 0}
-      m_SelectedIDs: 
-      m_LastClickedID: 0
-      m_ExpandedIDs: eefaffff
+      m_SelectedIDs: f8760000
+      m_LastClickedID: 30456
+      m_ExpandedIDs: 4ca6ffffd2a6ffffe6aaffff96b2ffff20c0ffffeefaffff
       m_RenameOverlay:
         m_UserAcceptedRename: 0
         m_Name: 
@@ -1146,9 +1180,9 @@ MonoBehaviour:
   m_PlayAudio: 0
   m_AudioPlay: 0
   m_Position:
-    m_Target: {x: 0.6971751, y: -1.1356088, z: -0.023197956}
+    m_Target: {x: -2.0394351, y: -14.992995, z: 3.8696432}
     speed: 2
-    m_Value: {x: 0.6971751, y: -1.1356088, z: -0.023197953}
+    m_Value: {x: -2.0394351, y: -14.992995, z: 3.8696432}
   m_RenderMode: 0
   m_CameraMode:
     drawMode: 0
@@ -1195,20 +1229,20 @@ MonoBehaviour:
     m_GridAxis: 1
     m_gridOpacity: 0.5
   m_Rotation:
-    m_Target: {x: 0.61189383, y: -0.03910632, z: 0.030314792, w: 0.7893985}
+    m_Target: {x: 0.58376503, y: -0.009737645, z: 0.0070115593, w: 0.81185734}
     speed: 2
-    m_Value: {x: 0.6119349, y: -0.03792195, z: 0.029396739, w: 0.7894514}
+    m_Value: {x: 0.58375394, y: -0.009737461, z: 0.0070114266, w: 0.81184196}
   m_Size:
-    m_Target: 4.8524957
+    m_Target: 13.65999
     speed: 2
-    m_Value: 4.6435366
+    m_Value: 13.65999
   m_Ortho:
     m_Target: 0
     speed: 2
     m_Value: 0
   m_CameraSettings:
-    m_Speed: 1
-    m_SpeedNormalized: 0.5
+    m_Speed: 1.0005
+    m_SpeedNormalized: 0.49999997
     m_SpeedMin: 0.001
     m_SpeedMax: 2
     m_EasingEnabled: 1
