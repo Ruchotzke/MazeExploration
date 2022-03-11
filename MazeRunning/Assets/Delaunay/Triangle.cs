@@ -103,6 +103,29 @@ namespace Delaunay.Geometry
             return new Edge[3] {new Edge(a, b), new Edge(b, c), new Edge(c, a)};
         }
 
+        /// <summary>
+        /// Calculate and return the 3 angles of this triangle.
+        /// Might be a faster method, this uses the law of cosines.
+        /// </summary>
+        /// <returns>A list of 3 angles.</returns>
+        public float[] GetAngles()
+        {
+            float ab2 = math.distancesq(a, b);
+            float bc2 = math.distancesq(b, c);
+            float ca2 = math.distancesq(c, a);
+
+            float ab = math.sqrt(ab2);
+            float bc = math.sqrt(bc2);
+            float ca = math.sqrt(ca2);
+            
+            return new float[3]
+            {
+                Mathf.Acos((ab2 + bc2 - ca2) / (2 * ab * bc)),
+                Mathf.Acos((bc2 + ca2 - ab2) / (2 * bc * ca)),
+                Mathf.Acos((ca2 + ab2 - bc2) / (2 * ca * ab))
+            };
+        }
+
         public override string ToString()
         {
             return "TRI:[" + a + ", " + b + ", " + c + "]";

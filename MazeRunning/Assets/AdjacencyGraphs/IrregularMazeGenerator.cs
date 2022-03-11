@@ -1,12 +1,8 @@
-using System;
-using System.Collections;
 using System.Collections.Generic;
-using System.Linq;
+using Delaunay.Geometry;
 using Delaunay.Triangulation;
 using Unity.Mathematics;
-using Unity.VisualScripting;
 using UnityEngine;
-using UnityEngine.Networking;
 using Utilities;
 using Mesh = Delaunay.Triangulation.Mesh;
 
@@ -23,6 +19,7 @@ public class IrregularMazeGenerator : MonoBehaviour
     [Header("Draw Settings")] 
     public bool DrawBaseGrid = false;
     public bool DrawMazeGrid = true;
+    public bool DrawNewTri = true;
 
     private List<AdjacencyNode> samples;
 
@@ -118,6 +115,9 @@ public class IrregularMazeGenerator : MonoBehaviour
         }
         triangulation = triangulator.GenerateTriangulation();
 
+        /* Clip out very skinny triangles from the generated triangulation */
+        triangulation.RemoveSkinnyTriangles();
+
         /* Build up an adjacency graph */
         samples = new List<AdjacencyNode>();
         Dictionary<float2, AdjacencyNode> nodeLookup = new Dictionary<float2, AdjacencyNode>();
@@ -143,12 +143,12 @@ public class IrregularMazeGenerator : MonoBehaviour
                 /* We can now update our adjacency lists */
                 AdjacencyNode a = nodeLookup[edge.a];
                 AdjacencyNode b = nodeLookup[edge.b];
-
+        
                 if (!a.Neighbors.Contains(b)) a.Neighbors.Add(b);
                 if (!b.Neighbors.Contains(a)) b.Neighbors.Add(a);
             }
         }
-
+        
         /* Backtrace over the graph to generate a maze */
         DoBacktrace(samples[0]);
 
@@ -248,21 +248,40 @@ public class IrregularMazeGenerator : MonoBehaviour
                 
             }
         }
-
-        // if (triangulation != null)
+        
+        // if (triangulation != null && !DrawNewTri)
         // {
-        //     // Gizmos.color = Color.red;
-        //     // foreach (var sample in samples)
-        //     // {
-        //     //     Gizmos.DrawSphere(sample.position, 0.1f);
-        //     // }
+        //     Debug.Log("OLD " + Time.time);
+        //     Gizmos.color = Color.red;
+        //     foreach (var point in newTriangulation.Vertices)
+        //     {
+        //         Gizmos.DrawSphere(new Vector3((float) point.x, 0, (float) point.y), 0.1f);
+        //     }
         //
         //     Gizmos.color = Color.green;
         //     foreach (var tri in triangulation.Triangles)
         //     {
-        //         Gizmos.DrawLine(new Vector3(tri.a.x, 0, tri.a.y), new Vector3(tri.b.x, 0, tri.b.y));
-        //         Gizmos.DrawLine(new Vector3(tri.b.x, 0, tri.b.y), new Vector3(tri.c.x, 0, tri.c.y));
-        //         Gizmos.DrawLine(new Vector3(tri.c.x, 0, tri.c.y), new Vector3(tri.a.x, 0, tri.a.y));
+        //         Gizmos.DrawLine(new Vector3((float) tri.a.x, 0, (float) tri.a.y), new Vector3((float) tri.b.x, 0, (float) tri.b.y));
+        //         Gizmos.DrawLine(new Vector3((float) tri.b.x, 0, (float) tri.b.y), new Vector3((float) tri.c.x, 0, (float) tri.c.y));
+        //         Gizmos.DrawLine(new Vector3((float) tri.c.x, 0, (float) tri.c.y), new Vector3((float) tri.a.x, 0, (float) tri.a.y));
+        //     }
+        // }
+
+        // if (newTriangulation != null && DrawNewTri)
+        // {
+        //     Debug.Log("NEW " + Time.time);
+        //     Gizmos.color = Color.red;
+        //     foreach (var point in newTriangulation.Vertices)
+        //     {
+        //         Gizmos.DrawSphere(new Vector3((float) point.x, 0, (float) point.y), 0.1f);
+        //     }
+        //
+        //     Gizmos.color = Color.green;
+        //     foreach (var tri in newTriangulation.Triangles)
+        //     {
+        //         Gizmos.DrawLine(new Vector3((float) tri.vertices[0].x, 0, (float) tri.vertices[0].y), new Vector3((float) tri.vertices[1].x, 0, (float) tri.vertices[1].y));
+        //         Gizmos.DrawLine(new Vector3((float) tri.vertices[1].x, 0, (float) tri.vertices[1].y), new Vector3((float) tri.vertices[2].x, 0, (float) tri.vertices[2].y));
+        //         Gizmos.DrawLine(new Vector3((float) tri.vertices[2].x, 0, (float) tri.vertices[2].y), new Vector3((float) tri.vertices[0].x, 0, (float) tri.vertices[0].y));
         //     }
         // }
     }
