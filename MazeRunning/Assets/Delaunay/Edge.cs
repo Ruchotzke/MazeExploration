@@ -32,7 +32,7 @@ namespace Delaunay.Geometry
 
         public override int GetHashCode()
         {
-            return HashCode.Combine(a, b);
+            return HashCode.Combine(a, b) + HashCode.Combine(b, a); //we add the inverse as well to maintain equality for inverse edges
         }
 
         public override string ToString()

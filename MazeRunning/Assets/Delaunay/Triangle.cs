@@ -64,6 +64,37 @@ namespace Delaunay.Geometry
         }
 
         /// <summary>
+        /// Calculate the position of the circumcenter of this
+        /// triangle.
+        /// </summary>
+        /// <returns></returns>
+        public float2 GetCircumcenter()
+        {
+            float A = b.x - a.x;
+            float B = b.y - a.y;
+            float C = c.x - a.x;
+            float D = c.y - a.y;
+
+            float E = A * (a.x + b.x) + B * (a.y + b.y);
+            float F = C * (a.x + c.x) + D * (a.y + c.y);
+
+            float G = 2 * (A * (c.y - b.y) - B * (c.x - b.x));
+            
+            if (G == 0)
+            {
+                /* This is a colinear set of points - a degenerate triangle */
+                Debug.LogError("DEGENERATE TRIANGLE: cannot find circumcenter. " + ToString());
+                return float2.zero;
+            }
+            else
+            {
+                /* We can compute a circumcircle */
+                float2 center = new float2((D * E - B * F) / G, (A * F - C * E) / G);
+                return center;
+            }
+        }
+
+        /// <summary>
         /// Compute the circumcircle for this triangle.
         /// Algorithm Source: https://web.archive.org/web/20071030134248/http://www.exaflop.org/docs/cgafaq/cga1.html#Subject%201.01:%20How%20do%20I%20rotate%20a%202D%20point
         /// </summary>

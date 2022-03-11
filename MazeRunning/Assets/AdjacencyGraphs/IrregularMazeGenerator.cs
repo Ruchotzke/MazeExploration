@@ -17,13 +17,14 @@ public class IrregularMazeGenerator : MonoBehaviour
     public Waypoint pf_Waypoint;
 
     [Header("Draw Settings")] 
-    public bool DrawBaseGrid = false;
+    public bool DrawBaseGrid = true;
     public bool DrawMazeGrid = true;
-    public bool DrawNewTri = true;
+    public bool DrawVoronoi = true;
 
     private List<AdjacencyNode> samples;
 
-    private Mesh triangulation;
+    private Mesh generatedMesh;
+    private List<Edge> generatedVoronoi;
 
     private void Start()
     {
@@ -113,46 +114,19 @@ public class IrregularMazeGenerator : MonoBehaviour
         {
             triangulator.AddVertex(vertex);
         }
-        triangulation = triangulator.GenerateTriangulation();
+        generatedMesh = triangulator.GenerateTriangulation();
 
         /* Clip out very skinny triangles from the generated triangulation */
-        triangulation.RemoveSkinnyTriangles();
+        generatedMesh.RemoveSkinnyTriangles();
 
         /* Build up an adjacency graph */
-        samples = new List<AdjacencyNode>();
-        Dictionary<float2, AdjacencyNode> nodeLookup = new Dictionary<float2, AdjacencyNode>();
-        foreach (var triangle in triangulation.Triangles)
-        {
-            /* Foreach edge, build the adjacency list of the nodes */
-            foreach (var edge in triangle.GetEdges())
-            {
-                /* If these are new adjacency nodes, generate them */
-                if (!nodeLookup.ContainsKey(edge.a))
-                {
-                    AdjacencyNode node = new AdjacencyNode(new Vector3(edge.a.x, 0, edge.a.y));
-                    samples.Add(node);
-                    nodeLookup.Add(edge.a, node);
-                }
-                if (!nodeLookup.ContainsKey(edge.b))
-                {
-                    AdjacencyNode node = new AdjacencyNode(new Vector3(edge.b.x, 0, edge.b.y));
-                    samples.Add(node);
-                    nodeLookup.Add(edge.b, node);
-                }
-                
-                /* We can now update our adjacency lists */
-                AdjacencyNode a = nodeLookup[edge.a];
-                AdjacencyNode b = nodeLookup[edge.b];
-        
-                if (!a.Neighbors.Contains(b)) a.Neighbors.Add(b);
-                if (!b.Neighbors.Contains(a)) b.Neighbors.Add(a);
-            }
-        }
+        GenerateAdjacencyGraph(generatedMesh);
         
         /* Backtrace over the graph to generate a maze */
         DoBacktrace(samples[0]);
 
         /* Create a voronoi diagram to help in mesh construction */
+        generatedVoronoi = generatedMesh.GenerateDualGraph(new float2(Boundary.min.x, Boundary.min.z), new float2(Boundary.max.x, Boundary.max.z));
 
         /* Each node is responsible for its nearby region */
     }
@@ -215,6 +189,42 @@ public class IrregularMazeGenerator : MonoBehaviour
         }
     }
 
+    /// <summary>
+    /// Generate an adjacency graph from the triangulation provided.
+    /// </summary>
+    void GenerateAdjacencyGraph(Mesh triangulation)
+    {
+        samples = new List<AdjacencyNode>();
+        Dictionary<float2, AdjacencyNode> nodeLookup = new Dictionary<float2, AdjacencyNode>();
+        foreach (var triangle in triangulation.Triangles)
+        {
+            /* Foreach edge, build the adjacency list of the nodes */
+            foreach (var edge in triangle.GetEdges())
+            {
+                /* If these are new adjacency nodes, generate them */
+                if (!nodeLookup.ContainsKey(edge.a))
+                {
+                    AdjacencyNode node = new AdjacencyNode(new Vector3(edge.a.x, 0, edge.a.y));
+                    samples.Add(node);
+                    nodeLookup.Add(edge.a, node);
+                }
+                if (!nodeLookup.ContainsKey(edge.b))
+                {
+                    AdjacencyNode node = new AdjacencyNode(new Vector3(edge.b.x, 0, edge.b.y));
+                    samples.Add(node);
+                    nodeLookup.Add(edge.b, node);
+                }
+                
+                /* We can now update our adjacency lists */
+                AdjacencyNode a = nodeLookup[edge.a];
+                AdjacencyNode b = nodeLookup[edge.b];
+        
+                if (!a.Neighbors.Contains(b)) a.Neighbors.Add(b);
+                if (!b.Neighbors.Contains(a)) b.Neighbors.Add(a);
+            }
+        }
+    }
+
     private void OnDrawGizmosSelected()
     {
         if (samples != null)
@@ -246,6 +256,15 @@ public class IrregularMazeGenerator : MonoBehaviour
                     }
                 }
                 
+            }
+        }
+
+        if (generatedVoronoi != null && DrawVoronoi)
+        {
+            Gizmos.color = Color.blue;
+            foreach (var edge in generatedVoronoi)
+            {
+                Gizmos.DrawLine(new Vector3(edge.a.x, 0, edge.a.y), new Vector3(edge.b.x, 0, edge.b.y));
             }
         }
         
