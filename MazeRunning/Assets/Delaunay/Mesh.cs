@@ -73,6 +73,12 @@ namespace Delaunay.Triangulation
             /* Create a container for the output structure */
             List<Edge> dual = new List<Edge>();
             
+            /* Keep track of any edges cut off by the boundary. We need to add edges to finish these polygons */
+            List<float2> minXEdges = new List<float2>();
+            List<float2> minYEdges = new List<float2>();
+            List<float2> maxXEdges = new List<float2>();
+            List<float2> maxYEdges = new List<float2>();
+            
             /* Dual graph algorithm: Generate a new edge for each
              connected face. This will create a non-triangular structure,
              thus a mesh can no longer hold it. */
@@ -96,36 +102,70 @@ namespace Delaunay.Triangulation
                     /* If A or B lies outside of the boundary, we need to clip this edge short */
                     /* EDGE CASE NOT HANDLED: WHAT HAPPENS IF A POINT IS ON A CORNER OOB (over max x and max y) */
                     /* TODO: Fix edge case with COHEN SUTHERLAND */
-                    Debug.Log("CLIP " + a + ", " + b);
-                    
                     if (a.x < min.x)
                     {
                         float t = (min.x - a.x) / delta.x;
                         float y = a.y + delta.y * t;
-                        dual.Add(new Edge(new float2(min.x, y), b));
+                        Edge newEdge = new Edge(new float2(min.x, y), b);
+                        minXEdges.Add(newEdge.a);
+                        dual.Add(newEdge);
                     }
                     else if (a.x > max.x)
                     {
                         float t = (max.x - b.x) / -delta.x;
                         float y = b.y - delta.y * t;
-                        dual.Add(new Edge(b, new float2(max.x, y)));
+                        Edge newEdge = new Edge(b, new float2(max.x, y));
+                        maxXEdges.Add(newEdge.b);
+                        dual.Add(newEdge);
                     }
                     else if(a.y < min.y)
                     {
                         float t = (min.y - a.y) / delta.y;
                         float x = a.x + delta.x * t;
-                        dual.Add(new Edge(new float2(x, min.y), b));
+                        Edge newEdge = new Edge(new float2(x, min.y), b);
+                        minYEdges.Add(newEdge.a);
+                        dual.Add(newEdge);
                     }
                     else if(a.y > max.y)
                     {
                         float t = (max.y - b.y) / -delta.y;
                         float x = b.x - delta.x * t;
-                        dual.Add(new Edge(b, new float2(x, max.y)));
+                        Edge newEdge = new Edge(b, new float2(x, max.y));
+                        maxYEdges.Add(newEdge.b);
+                        dual.Add(newEdge);
                     }
                     
-                    if(b.x < min.x || b.x > max.x || b.y < min.y || b.y > max.y)
+                    if (b.x < min.x)
                     {
-                        
+                        float t = (min.x - b.x) / delta.x;
+                        float y = b.y + delta.y * t;
+                        Edge newEdge = new Edge(new float2(min.x, y), a);
+                        minXEdges.Add(newEdge.a);
+                        dual.Add(newEdge);
+                    }
+                    else if (b.x > max.x)
+                    {
+                        float t = (max.x - a.x) / -delta.x;
+                        float y = a.y - delta.y * t;
+                        Edge newEdge = new Edge(a, new float2(max.x, y));
+                        maxXEdges.Add(newEdge.b);
+                        dual.Add(newEdge);
+                    }
+                    else if(b.y < min.y)
+                    {
+                        float t = (min.y - b.y) / delta.y;
+                        float x = b.x + delta.x * t;
+                        Edge newEdge = new Edge(new float2(x, min.y), a);
+                        minYEdges.Add(newEdge.a);
+                        dual.Add(newEdge);
+                    }
+                    else if(b.y > max.y)
+                    {
+                        float t = (max.y - a.y) / -delta.y;
+                        float x = a.x - delta.x * t;
+                        Edge newEdge = new Edge(a, new float2(x, max.y));
+                        maxYEdges.Add(newEdge.b);
+                        dual.Add(newEdge);
                     }
                 }
                 else
@@ -156,7 +196,9 @@ namespace Delaunay.Triangulation
                             if (y >= min.y && y <= max.y)
                             {
                                 float2 b = new float2(max.x, y);
-                                dual.Add(new Edge(a, b));
+                                Edge newEdge = new Edge(a, b);
+                                maxXEdges.Add(newEdge.b);
+                                dual.Add(newEdge);
                             }
                         }
                         else
@@ -169,7 +211,9 @@ namespace Delaunay.Triangulation
                             if (y >= min.y && y <= max.y)
                             {
                                 float2 b = new float2(min.x, y);
-                                dual.Add(new Edge(a, b));
+                                Edge newEdge = new Edge(a, b);
+                                minXEdges.Add(newEdge.b);
+                                dual.Add(newEdge);
                             }
                         }
                     }
@@ -187,7 +231,9 @@ namespace Delaunay.Triangulation
                             if (x >= min.x && x <= max.x)
                             {
                                 float2 b = new float2(x, max.y);
-                                dual.Add(new Edge(a, b));
+                                Edge newEdge = new Edge(a, b);
+                                maxYEdges.Add(newEdge.b);
+                                dual.Add(newEdge);
                             }
                         }
                         else
@@ -200,13 +246,23 @@ namespace Delaunay.Triangulation
                             if (x >= min.x && x <= max.x)
                             {
                                 float2 b = new float2(x, min.y);
-                                dual.Add(new Edge(a, b));
+                                Edge newEdge = new Edge(a, b);
+                                minYEdges.Add(newEdge.b);
+                                dual.Add(newEdge);
                             }
                         }
                     }
                 }
             }
 
+            /* We now have internal voronoi, but edge cells need to be completed */
+            /* Start by sorting each list in an order to make new edge calculation easier */
+            minXEdges.Sort((a, b) => (int)(a.y - b.y));
+            minYEdges.Sort((a, b) => (int)(a.x - b.x));
+            maxXEdges.Sort((a, b) => (int)(a.y - b.y));
+            maxYEdges.Sort((a, b) => (int)(a.x - b.x));
+            
+            
             /* Return the complete dual of this mesh */
             return dual;
         }
