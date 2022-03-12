@@ -1,5 +1,6 @@
 ﻿using System.Collections.Generic;
 using Delaunay.Geometry;
+using PlasticGui.WorkspaceWindow.BranchExplorer;
 using Unity.Mathematics;
 using UnityEngine;
 
@@ -262,6 +263,42 @@ namespace Delaunay.Triangulation
             maxXEdges.Sort((a, b) => (int)(a.y - b.y));
             maxYEdges.Sort((a, b) => (int)(a.x - b.x));
             
+            /* Add edges to fill in the outer boundary of the cells */
+            /* MinX */
+            float2 prev = min;
+            foreach (var t in minXEdges)
+            {
+                dual.Add(new Edge(prev, t));
+                prev = t;
+            }
+            dual.Add(new Edge(prev, new float2(min.x, max.y)));
+            
+            /* MaxX */
+            prev = new float2(max.x, min.y);
+            foreach (var vert in maxXEdges)
+            {
+                dual.Add(new Edge(prev, vert));
+                prev = vert;
+            }
+            dual.Add(new Edge(prev, max));
+            
+            /* MinY */
+            prev = min;
+            foreach (var t in minYEdges)
+            {
+                dual.Add(new Edge(prev, t));
+                prev = t;
+            }
+            dual.Add(new Edge(prev, new float2(max.x, min.y)));
+            
+            /* MaxY */
+            prev = new float2(min.x, max.y);
+            foreach (var vert in maxYEdges)
+            {
+                dual.Add(new Edge(prev, vert));
+                prev = vert;
+            }
+            dual.Add(new Edge(prev, max));
             
             /* Return the complete dual of this mesh */
             return dual;
