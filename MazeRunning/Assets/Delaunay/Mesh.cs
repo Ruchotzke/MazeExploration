@@ -1,4 +1,5 @@
 ﻿using System.Collections.Generic;
+using Codice.Client.GameUI.Update;
 using Delaunay.Geometry;
 using PlasticGui.WorkspaceWindow.BranchExplorer;
 using Unity.Mathematics;
@@ -18,7 +19,7 @@ namespace Delaunay.Triangulation
         /// </summary>
         public Mesh()
         {
-            
+
         }
 
         /// <summary>
@@ -65,8 +66,8 @@ namespace Delaunay.Triangulation
         /// </summary>
         /// <param name="min">The lower left corner of the rect containing this dual graph</param>
         /// <param name="max">The upper right corner of the rect containing this dual graph.</param>
-        /// <returns>A list of edges describing the generated polygon.</returns>
-        public List<Edge> GenerateDualGraph(float2 min, float2 max)
+        /// <returns>A list relating sites to voronoi polygons.</returns>
+        public List<(float2 site, Polygon polygon)> GenerateDualGraph(float2 min, float2 max)
         {
             /* Generate a list of edges in the current mesh */
             var edges = GetEdges();
@@ -378,18 +379,16 @@ namespace Delaunay.Triangulation
             
             /* Assemble edges into polygons */
             int polygonCount = 0;
+            List<(float2 site, Polygon polygon)> polygonOutput = new List<(float2 site, Polygon polygon)>();
             foreach (var key in Polygons.Keys)
             {
-                if (Polygons[key].Count > 0)
-                {
-                    polygonCount++;
-                    Debug.Log("Polygon " + key + " has " + Polygons[key].Count + " edges.");
-                }
+                polygonOutput.Add((key, new Polygon(Polygons[key])));
+                polygonCount++;
             }
             Debug.Log("Assembled " + polygonCount + " polygons.");
             
             /* Return the complete dual of this mesh */
-            return dual;
+            return polygonOutput;
         }
 
         /// <summary>

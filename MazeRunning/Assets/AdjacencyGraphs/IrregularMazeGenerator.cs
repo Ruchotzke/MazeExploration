@@ -24,84 +24,13 @@ public class IrregularMazeGenerator : MonoBehaviour
     private List<AdjacencyNode> samples;
 
     private Mesh generatedMesh;
-    private List<Edge> generatedVoronoi;
+    private List<(float2 site, Polygon polygon)> generatedVoronoi;
 
     private void Start()
     {
         GenerateMaze();
     }
     
-    // private void Start()
-    // {
-    //     /* Perform a sampling operation */
-    //     PoissonSampler sampler =
-    //         new PoissonSampler(new Rect(Boundary.min.x, Boundary.min.z, Boundary.size.x, Boundary.size.z), MinDistance);
-    //
-    //     samples = sampler.SampleWithAdjacency(Vector2.zero, ConnectionDistance);
-    //
-    //     Triangulator tri = new Triangulator();
-    //     foreach (var sample in samples)
-    //     {
-    //         tri.AddVertex(new float2(sample.position.x, sample.position.z));
-    //     }
-    //
-    //     mesh = tri.GenerateTriangulation();
-    //
-    //     // Debug.Log("Starting overlap detection.");
-    //     // int overlapCount = 0;
-    //     // edges = new Dictionary<AdjacencyNode, List<(AdjacencyNode a, AdjacencyNode b)>>();
-    //     // foreach (var sample in samples)
-    //     // {
-    //     //     edges.Add(sample, new List<(AdjacencyNode a, AdjacencyNode b)>());
-    //     //     List<AdjacencyNode> toRemove = new List<AdjacencyNode>();
-    //     //     foreach (var neighbor in sample.Neighbors)
-    //     //     {
-    //     //         /* check to see if this edge overlaps with any other edges. if it does, ignore it */
-    //     //         bool overlapFound = false;
-    //     //         foreach (var list in edges.Values)
-    //     //         {
-    //     //             foreach (var line in list)
-    //     //             {
-    //     //                 /* First, is this line the direct inverse? If so, we want to skip it */
-    //     //                 if (line.a == sample || line.a == neighbor)
-    //     //                 {
-    //     //                     continue;
-    //     //                 }
-    //     //                 
-    //     //                 Vector2 a = new Vector2(sample.position.x, sample.position.z);
-    //     //                 Vector2 b = new Vector2(neighbor.position.x, neighbor.position.z);
-    //     //                 Vector2 c = new Vector2(line.a.position.x, line.a.position.z);
-    //     //                 Vector2 d = new Vector2(line.b.position.x, line.b.position.z);
-    //     //                 
-    //     //                 overlapFound = Utilities.Utilities.IsLineIntersecting(a, b, c, d, false);
-    //     //
-    //     //                 if (overlapFound)
-    //     //                 {
-    //     //                     overlapCount++;
-    //     //                     toRemove.Add(neighbor);
-    //     //                     break;
-    //     //                 }
-    //     //             }
-    //     //
-    //     //             if (overlapFound) break;
-    //     //         }
-    //     //         
-    //     //         if(!overlapFound) edges[sample].Add((sample, neighbor));
-    //     //     }
-    //     //     
-    //     //     /* Remove any overlapping neighbors */
-    //     //     foreach (var neighbor in toRemove)
-    //     //     {
-    //     //         sample.Neighbors.Remove(neighbor);
-    //     //         neighbor.Neighbors.Remove(sample);
-    //     //     }
-    //     // }
-    //     // Debug.Log("Stopping overlap detection. " + overlapCount + " edges overlapping removed.");
-    //
-    //     /* Do the backtrace */
-    //     DoBacktrace(samples[0]);
-    // }
-
     private void GenerateMaze()
     {
         /* First sample the region where the maze will lie */
@@ -262,46 +191,13 @@ public class IrregularMazeGenerator : MonoBehaviour
         if (generatedVoronoi != null && DrawVoronoi)
         {
             Gizmos.color = Color.blue;
-            foreach (var edge in generatedVoronoi)
+            foreach (var polygon in generatedVoronoi)
             {
-                Gizmos.DrawLine(new Vector3(edge.a.x, 0, edge.a.y), new Vector3(edge.b.x, 0, edge.b.y));
+                foreach (var edge in polygon.polygon.edges)
+                {
+                    Gizmos.DrawLine(new Vector3(edge.a.x, 0, edge.a.y), new Vector3(edge.b.x, 0, edge.b.y));
+                }
             }
         }
-        
-        // if (triangulation != null && !DrawNewTri)
-        // {
-        //     Debug.Log("OLD " + Time.time);
-        //     Gizmos.color = Color.red;
-        //     foreach (var point in newTriangulation.Vertices)
-        //     {
-        //         Gizmos.DrawSphere(new Vector3((float) point.x, 0, (float) point.y), 0.1f);
-        //     }
-        //
-        //     Gizmos.color = Color.green;
-        //     foreach (var tri in triangulation.Triangles)
-        //     {
-        //         Gizmos.DrawLine(new Vector3((float) tri.a.x, 0, (float) tri.a.y), new Vector3((float) tri.b.x, 0, (float) tri.b.y));
-        //         Gizmos.DrawLine(new Vector3((float) tri.b.x, 0, (float) tri.b.y), new Vector3((float) tri.c.x, 0, (float) tri.c.y));
-        //         Gizmos.DrawLine(new Vector3((float) tri.c.x, 0, (float) tri.c.y), new Vector3((float) tri.a.x, 0, (float) tri.a.y));
-        //     }
-        // }
-
-        // if (newTriangulation != null && DrawNewTri)
-        // {
-        //     Debug.Log("NEW " + Time.time);
-        //     Gizmos.color = Color.red;
-        //     foreach (var point in newTriangulation.Vertices)
-        //     {
-        //         Gizmos.DrawSphere(new Vector3((float) point.x, 0, (float) point.y), 0.1f);
-        //     }
-        //
-        //     Gizmos.color = Color.green;
-        //     foreach (var tri in newTriangulation.Triangles)
-        //     {
-        //         Gizmos.DrawLine(new Vector3((float) tri.vertices[0].x, 0, (float) tri.vertices[0].y), new Vector3((float) tri.vertices[1].x, 0, (float) tri.vertices[1].y));
-        //         Gizmos.DrawLine(new Vector3((float) tri.vertices[1].x, 0, (float) tri.vertices[1].y), new Vector3((float) tri.vertices[2].x, 0, (float) tri.vertices[2].y));
-        //         Gizmos.DrawLine(new Vector3((float) tri.vertices[2].x, 0, (float) tri.vertices[2].y), new Vector3((float) tri.vertices[0].x, 0, (float) tri.vertices[0].y));
-        //     }
-        // }
     }
 }

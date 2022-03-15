@@ -19,7 +19,7 @@ MonoBehaviour:
     width: 1920
     height: 989
   m_ShowMode: 4
-  m_Title: Inspector
+  m_Title: Test Runner
   m_RootView: {fileID: 8}
   m_MinSize: {x: 875, y: 300}
   m_MaxSize: {x: 10000, y: 10000}
@@ -74,7 +74,7 @@ MonoBehaviour:
   m_MinSize: {x: 200, y: 100}
   m_MaxSize: {x: 16192, y: 8096}
   vertical: 0
-  controlID: 27
+  controlID: 17
 --- !u!114 &4
 MonoBehaviour:
   m_ObjectHideFlags: 52
@@ -99,7 +99,7 @@ MonoBehaviour:
   m_MinSize: {x: 300, y: 200}
   m_MaxSize: {x: 24288, y: 16192}
   vertical: 0
-  controlID: 25
+  controlID: 15
 --- !u!114 &5
 MonoBehaviour:
   m_ObjectHideFlags: 52
@@ -274,7 +274,7 @@ MonoBehaviour:
   m_MinSize: {x: 200, y: 200}
   m_MaxSize: {x: 16192, y: 16192}
   vertical: 1
-  controlID: 26
+  controlID: 16
 --- !u!114 &12
 MonoBehaviour:
   m_ObjectHideFlags: 52
@@ -299,7 +299,7 @@ MonoBehaviour:
   m_MinSize: {x: 200, y: 100}
   m_MaxSize: {x: 16192, y: 8096}
   vertical: 0
-  controlID: 18
+  controlID: 61
 --- !u!114 &13
 MonoBehaviour:
   m_ObjectHideFlags: 52
@@ -310,7 +310,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 1
   m_Script: {fileID: 12006, guid: 0000000000000000e000000000000000, type: 0}
-  m_Name: SceneView
+  m_Name: TestRunnerWindow
   m_EditorClassIdentifier: 
   m_Children: []
   m_Position:
@@ -319,14 +319,14 @@ MonoBehaviour:
     y: 0
     width: 1104
     height: 555
-  m_MinSize: {x: 202, y: 221}
+  m_MinSize: {x: 102, y: 121}
   m_MaxSize: {x: 4002, y: 4021}
-  m_ActualView: {fileID: 18}
+  m_ActualView: {fileID: 14}
   m_Panes:
   - {fileID: 18}
   - {fileID: 14}
-  m_Selected: 0
-  m_LastSelected: 1
+  m_Selected: 1
+  m_LastSelected: 0
 --- !u!114 &14
 MonoBehaviour:
   m_ObjectHideFlags: 52
@@ -356,7 +356,7 @@ MonoBehaviour:
     m_LastAppliedPresetName: Default
     m_SaveData: []
   m_Spl:
-    ID: 869
+    ID: 1888
     splitterInitialOffset: 0
     currentActiveSplitter: -1
     realSizes:
@@ -423,7 +423,7 @@ MonoBehaviour:
       name: MazeRunning
       fullName: MazeRunning
       resultStatus: 1
-      duration: 0.0734757
+      duration: 0.0467151
       messages: 
       output: 
       stacktrace: 
@@ -439,7 +439,7 @@ MonoBehaviour:
       name: Tests.dll
       fullName: D:/Unity-Repo/MazeExploration/MazeRunning/Library/ScriptAssemblies/Tests.dll
       resultStatus: 1
-      duration: 0.0297198
+      duration: 0.0276968
       messages: 
       output: 
       stacktrace: 
@@ -451,11 +451,231 @@ MonoBehaviour:
       parentId: 1000
       parentUniqueId: '[MazeRunning][suite]'
     - id: 1001
+      uniqueId: Tests.dll/[Tests][ClippingTests][suite]
+      name: ClippingTests
+      fullName: ClippingTests
+      resultStatus: 1
+      duration: 0.0091475
+      messages: 
+      output: 
+      stacktrace: 
+      notRunnable: 0
+      ignoredOrSkipped: 0
+      description: 
+      isSuite: 1
+      categories: []
+      parentId: 1016
+      parentUniqueId: '[Tests][D:/Unity-Repo/MazeExploration/MazeRunning/Library/ScriptAssemblies/Tests.dll][suite]'
+    - id: 1008
+      uniqueId: Tests.dll/ClippingTests/[Tests][ClippingTests.TestBtHorizontalClipB]
+      name: TestBtHorizontalClipB
+      fullName: ClippingTests.TestBtHorizontalClipB
+      resultStatus: 1
+      duration: 0.0006711
+      messages: 
+      output: 
+      stacktrace: 
+      notRunnable: 0
+      ignoredOrSkipped: 0
+      description: 
+      isSuite: 0
+      categories:
+      - Uncategorized
+      parentId: 1001
+      parentUniqueId: Tests.dll/[Tests][ClippingTests][suite]
+    - id: 1009
+      uniqueId: Tests.dll/ClippingTests/[Tests][ClippingTests.TestBtHorizontalClipBT]
+      name: TestBtHorizontalClipBT
+      fullName: ClippingTests.TestBtHorizontalClipBT
+      resultStatus: 1
+      duration: 0.0002895
+      messages: 
+      output: 
+      stacktrace: 
+      notRunnable: 0
+      ignoredOrSkipped: 0
+      description: 
+      isSuite: 0
+      categories:
+      - Uncategorized
+      parentId: 1001
+      parentUniqueId: Tests.dll/[Tests][ClippingTests][suite]
+    - id: 1007
+      uniqueId: Tests.dll/ClippingTests/[Tests][ClippingTests.TestBtHorizontalClipT]
+      name: TestBtHorizontalClipT
+      fullName: ClippingTests.TestBtHorizontalClipT
+      resultStatus: 1
+      duration: 0.0002148
+      messages: 
+      output: 
+      stacktrace: 
+      notRunnable: 0
+      ignoredOrSkipped: 0
+      description: 
+      isSuite: 0
+      categories:
+      - Uncategorized
+      parentId: 1001
+      parentUniqueId: Tests.dll/[Tests][ClippingTests][suite]
+    - id: 1011
+      uniqueId: Tests.dll/ClippingTests/[Tests][ClippingTests.TestDiagonalClipCorner]
+      name: TestDiagonalClipCorner
+      fullName: ClippingTests.TestDiagonalClipCorner
+      resultStatus: 1
+      duration: 0.0005547
+      messages: 
+      output: 
+      stacktrace: 
+      notRunnable: 0
+      ignoredOrSkipped: 0
+      description: 
+      isSuite: 0
+      categories:
+      - Uncategorized
+      parentId: 1001
+      parentUniqueId: Tests.dll/[Tests][ClippingTests][suite]
+    - id: 1010
+      uniqueId: Tests.dll/ClippingTests/[Tests][ClippingTests.TestDiagonalClipNonCorner]
+      name: TestDiagonalClipNonCorner
+      fullName: ClippingTests.TestDiagonalClipNonCorner
+      resultStatus: 1
+      duration: 0.0001231
+      messages: 
+      output: 
+      stacktrace: 
+      notRunnable: 0
+      ignoredOrSkipped: 0
+      description: 
+      isSuite: 0
+      categories:
+      - Uncategorized
+      parentId: 1001
+      parentUniqueId: Tests.dll/[Tests][ClippingTests][suite]
+    - id: 1002
+      uniqueId: Tests.dll/ClippingTests/[Tests][ClippingTests.TestInBounds]
+      name: TestInBounds
+      fullName: ClippingTests.TestInBounds
+      resultStatus: 1
+      duration: 0.0003583
+      messages: 
+      output: 
+      stacktrace: 
+      notRunnable: 0
+      ignoredOrSkipped: 0
+      description: 
+      isSuite: 0
+      categories:
+      - Uncategorized
+      parentId: 1001
+      parentUniqueId: Tests.dll/[Tests][ClippingTests][suite]
+    - id: 1005
+      uniqueId: Tests.dll/ClippingTests/[Tests][ClippingTests.TestLRHorizontalClipL]
+      name: TestLRHorizontalClipL
+      fullName: ClippingTests.TestLRHorizontalClipL
+      resultStatus: 1
+      duration: 0.0002017
+      messages: 
+      output: 
+      stacktrace: 
+      notRunnable: 0
+      ignoredOrSkipped: 0
+      description: 
+      isSuite: 0
+      categories:
+      - Uncategorized
+      parentId: 1001
+      parentUniqueId: Tests.dll/[Tests][ClippingTests][suite]
+    - id: 1006
+      uniqueId: Tests.dll/ClippingTests/[Tests][ClippingTests.TestLRHorizontalClipLR]
+      name: TestLRHorizontalClipLR
+      fullName: ClippingTests.TestLRHorizontalClipLR
+      resultStatus: 1
+      duration: 0.0002135
+      messages: 
+      output: 
+      stacktrace: 
+      notRunnable: 0
+      ignoredOrSkipped: 0
+      description: 
+      isSuite: 0
+      categories:
+      - Uncategorized
+      parentId: 1001
+      parentUniqueId: Tests.dll/[Tests][ClippingTests][suite]
+    - id: 1004
+      uniqueId: Tests.dll/ClippingTests/[Tests][ClippingTests.TestLrHorizontalClipR]
+      name: TestLrHorizontalClipR
+      fullName: ClippingTests.TestLrHorizontalClipR
+      resultStatus: 1
+      duration: 0.0002
+      messages: 
+      output: 
+      stacktrace: 
+      notRunnable: 0
+      ignoredOrSkipped: 0
+      description: 
+      isSuite: 0
+      categories:
+      - Uncategorized
+      parentId: 1001
+      parentUniqueId: Tests.dll/[Tests][ClippingTests][suite]
+    - id: 1012
+      uniqueId: Tests.dll/ClippingTests/[Tests][ClippingTests.TestRightLeft]
+      name: TestRightLeft
+      fullName: ClippingTests.TestRightLeft
+      resultStatus: 1
+      duration: 0.0001884
+      messages: 
+      output: 
+      stacktrace: 
+      notRunnable: 0
+      ignoredOrSkipped: 0
+      description: 
+      isSuite: 0
+      categories:
+      - Uncategorized
+      parentId: 1001
+      parentUniqueId: Tests.dll/[Tests][ClippingTests][suite]
+    - id: 1003
+      uniqueId: Tests.dll/ClippingTests/[Tests][ClippingTests.TestSinglePoint]
+      name: TestSinglePoint
+      fullName: ClippingTests.TestSinglePoint
+      resultStatus: 1
+      duration: 0.000169
+      messages: 
+      output: 
+      stacktrace: 
+      notRunnable: 0
+      ignoredOrSkipped: 0
+      description: 
+      isSuite: 0
+      categories:
+      - Uncategorized
+      parentId: 1001
+      parentUniqueId: Tests.dll/[Tests][ClippingTests][suite]
+    - id: 1013
+      uniqueId: Tests.dll/ClippingTests/[Tests][ClippingTests.TestTopBot]
+      name: TestTopBot
+      fullName: ClippingTests.TestTopBot
+      resultStatus: 1
+      duration: 0.0002478
+      messages: 
+      output: 
+      stacktrace: 
+      notRunnable: 0
+      ignoredOrSkipped: 0
+      description: 
+      isSuite: 0
+      categories:
+      - Uncategorized
+      parentId: 1001
+      parentUniqueId: Tests.dll/[Tests][ClippingTests][suite]
+    - id: 1001
       uniqueId: Tests.dll/[Tests][GeometryTests][suite]
       name: GeometryTests
       fullName: GeometryTests
       resultStatus: 1
-      duration: 0.0283031
+      duration: 0.0162784
       messages: 
       output: 
       stacktrace: 
@@ -471,7 +691,7 @@ MonoBehaviour:
       name: ConstructCircle
       fullName: GeometryTests.ConstructCircle
       resultStatus: 1
-      duration: 0.0119213
+      duration: 0.0013746
       messages: 
       output: 
       stacktrace: 
@@ -488,7 +708,7 @@ MonoBehaviour:
       name: ConstructTriangle
       fullName: GeometryTests.ConstructTriangle
       resultStatus: 1
-      duration: 0.0005399
+      duration: 0.0006204
       messages: 
       output: 
       stacktrace: 
@@ -505,7 +725,7 @@ MonoBehaviour:
       name: ConstructTriangleColinear
       fullName: GeometryTests.ConstructTriangleColinear
       resultStatus: 1
-      duration: 0.0015677
+      duration: 0.0020553
       messages: 
       output: 
       stacktrace: 
@@ -522,7 +742,7 @@ MonoBehaviour:
       name: ConstructTriangleWinding
       fullName: GeometryTests.ConstructTriangleWinding
       resultStatus: 1
-      duration: 0.0001707
+      duration: 0.0001826
       messages: 
       output: 
       stacktrace: 
@@ -539,7 +759,7 @@ MonoBehaviour:
       name: GetCircumcircleColinear
       fullName: GeometryTests.GetCircumcircleColinear
       resultStatus: 1
-      duration: 0.000307
+      duration: 0.0004254
       messages: 
       output: 
       stacktrace: 
@@ -556,7 +776,7 @@ MonoBehaviour:
       name: GetCircumcircleEquilateral
       fullName: GeometryTests.GetCircumcircleEquilateral
       resultStatus: 1
-      duration: 0.0005546
+      duration: 0.0007098
       messages: 
       output: 
       stacktrace: 
@@ -573,7 +793,7 @@ MonoBehaviour:
       name: GetCircumcircleEquilateralOffCenter
       fullName: GeometryTests.GetCircumcircleEquilateralOffCenter
       resultStatus: 1
-      duration: 0.000255
+      duration: 0.0003144
       messages: 
       output: 
       stacktrace: 
@@ -590,7 +810,7 @@ MonoBehaviour:
       name: GetCircumcircleTest1
       fullName: GeometryTests.GetCircumcircleTest1
       resultStatus: 1
-      duration: 0.0001744
+      duration: 0.0002317
       messages: 
       output: 
       stacktrace: 
@@ -607,7 +827,7 @@ MonoBehaviour:
       name: TestInteriorofCircleEdge
       fullName: GeometryTests.TestInteriorofCircleEdge
       resultStatus: 1
-      duration: 0.00037
+      duration: 0.0002
       messages: 
       output: 
       stacktrace: 
@@ -624,7 +844,7 @@ MonoBehaviour:
       name: TestInteriorofCircleFalse
       fullName: GeometryTests.TestInteriorofCircleFalse
       resultStatus: 1
-      duration: 0.000273
+      duration: 0.0003077
       messages: 
       output: 
       stacktrace: 
@@ -641,7 +861,7 @@ MonoBehaviour:
       name: TestInteriorOfCircleOffset
       fullName: GeometryTests.TestInteriorOfCircleOffset
       resultStatus: 1
-      duration: 0.0002599
+      duration: 0.0002404
       messages: 
       output: 
       stacktrace: 
@@ -658,7 +878,7 @@ MonoBehaviour:
       name: TestInteriorofCircleTrue
       fullName: GeometryTests.TestInteriorofCircleTrue
       resultStatus: 1
-      duration: 0.0001303
+      duration: 0.0001397
       messages: 
       output: 
       stacktrace: 
@@ -670,13 +890,13 @@ MonoBehaviour:
       - Uncategorized
       parentId: 1001
       parentUniqueId: Tests.dll/[Tests][GeometryTests][suite]
-    m_ResultText: TestInteriorOfCircleOffset (0.000s)
+    m_ResultText: TestDiagonalClipNonCorner (0.000s)
     m_ResultStacktrace: 
     m_TestListState:
       scrollPos: {x: 0, y: 0}
-      m_SelectedIDs: a02bb5de
-      m_LastClickedID: -558552160
-      m_ExpandedIDs: d6ba0bdd70c0262922d23629ffffff7f
+      m_SelectedIDs: 6b3ad03b
+      m_LastClickedID: 1003502187
+      m_ExpandedIDs: d6ba0bdd70c02629bc169461ffffff7f
       m_RenameOverlay:
         m_UserAcceptedRename: 0
         m_Name: 
@@ -744,22 +964,22 @@ MonoBehaviour:
     m_SkipHidden: 0
     m_SearchArea: 1
     m_Folders:
-    - Assets/Delaunay Triangle
+    - Assets
     m_Globs: []
     m_OriginalText: 
   m_ViewMode: 1
   m_StartGridSize: 64
   m_LastFolders:
-  - Assets/Delaunay Triangle
+  - Assets
   m_LastFoldersGridSize: -1
   m_LastProjectPath: D:\Unity-Repo\MazeExploration\MazeRunning
   m_LockTracker:
     m_IsLocked: 0
   m_FolderTreeState:
     scrollPos: {x: 0, y: 0}
-    m_SelectedIDs: fa730000
-    m_LastClickedID: 29690
-    m_ExpandedIDs: 000000005c720000
+    m_SelectedIDs: 5c720000
+    m_LastClickedID: 29276
+    m_ExpandedIDs: 000000005c72000000ca9a3bffffff7f
     m_RenameOverlay:
       m_UserAcceptedRename: 0
       m_Name: 
@@ -812,9 +1032,9 @@ MonoBehaviour:
       m_Icon: {fileID: 0}
       m_ResourceFile: 
   m_ListAreaState:
-    m_SelectedInstanceIDs: 740b0000
-    m_LastClickedInstanceID: 2932
-    m_HadKeyboardFocusLastEvent: 1
+    m_SelectedInstanceIDs: 10720000
+    m_LastClickedInstanceID: 29200
+    m_HadKeyboardFocusLastEvent: 0
     m_ExpandedInstanceIDs: c6230000
     m_RenameOverlay:
       m_UserAcceptedRename: 0
@@ -917,9 +1137,9 @@ MonoBehaviour:
   m_SceneHierarchy:
     m_TreeViewState:
       scrollPos: {x: 0, y: 0}
-      m_SelectedIDs: 10720000
-      m_LastClickedID: 29200
-      m_ExpandedIDs: eefaffff
+      m_SelectedIDs: 
+      m_LastClickedID: 0
+      m_ExpandedIDs: 6073ffffd474ffff8e7affff507effff6284ffffe08bffffb28fffff2691ffff0095ffffc89affffe89fffffb6a5ffffeefaffff
       m_RenameOverlay:
         m_UserAcceptedRename: 0
         m_Name: 
@@ -1180,9 +1400,9 @@ MonoBehaviour:
   m_PlayAudio: 0
   m_AudioPlay: 0
   m_Position:
-    m_Target: {x: -1.5814247, y: -11.390117, z: 0.61917686}
+    m_Target: {x: -5.4944415, y: -5.1743007, z: 7.3029037}
     speed: 2
-    m_Value: {x: -1.5814247, y: -11.390117, z: 0.61917686}
+    m_Value: {x: -5.4944415, y: -5.1743007, z: 7.3029037}
   m_RenderMode: 0
   m_CameraMode:
     drawMode: 0
@@ -1229,13 +1449,13 @@ MonoBehaviour:
     m_GridAxis: 1
     m_gridOpacity: 0.5
   m_Rotation:
-    m_Target: {x: 0.7081952, y: 0.0011270292, z: -0.0009959051, w: 0.7060656}
+    m_Target: {x: 0.7071068, y: 0, z: 0, w: 0.7071068}
     speed: 2
-    m_Value: {x: -0.7081952, y: -0.0011270292, z: 0.0009959051, w: -0.7060656}
+    m_Value: {x: 0.7071068, y: 0, z: 0, w: 0.7071068}
   m_Size:
-    m_Target: 24.034037
+    m_Target: 12.737134
     speed: 2
-    m_Value: 24.034037
+    m_Value: 12.737134
   m_Ortho:
     m_Target: 0
     speed: 2
