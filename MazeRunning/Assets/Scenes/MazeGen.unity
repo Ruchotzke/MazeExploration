@@ -584,12 +584,12 @@ MonoBehaviour:
   Boundary:
     m_Center: {x: 0, y: 0, z: 0}
     m_Extent: {x: 15, y: 1, z: 15}
-  MinDistance: 2
+  MinDistance: 10
   ConnectionDistance: 1
   pf_Waypoint: {fileID: 5910199848373282456, guid: b3fd0034894a3544aa17388f4c0a9002,
     type: 3}
   DrawBaseGrid: 0
-  DrawMazeGrid: 0
+  DrawMazeGrid: 1
   DrawVoronoi: 1
 --- !u!4 &1736596724
 Transform:

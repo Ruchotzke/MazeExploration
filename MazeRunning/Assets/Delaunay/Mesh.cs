@@ -73,12 +73,32 @@ namespace Delaunay.Triangulation
             
             /* Create a container for the output structure */
             List<Edge> dual = new List<Edge>();
+            Dictionary<float2, List<Edge>> Polygons = new Dictionary<float2, List<Edge>>(); //a mapping from sites to a list of edges
+
+            /* To simplify the voronoi code below, add all sites to the polygons dictionary */
+            foreach (var tri in Triangles)
+            {
+                if (!Polygons.ContainsKey(tri.a))
+                {
+                    Polygons.Add(tri.a, new List<Edge>());
+                }
+                
+                if (!Polygons.ContainsKey(tri.b))
+                {
+                    Polygons.Add(tri.b, new List<Edge>());
+                }
+                
+                if (!Polygons.ContainsKey(tri.c))
+                {
+                    Polygons.Add(tri.c, new List<Edge>());
+                }
+            }
             
             /* Keep track of any edges cut off by the boundary. We need to add edges to finish these polygons */
-            List<float2> minXEdges = new List<float2>();
-            List<float2> minYEdges = new List<float2>();
-            List<float2> maxXEdges = new List<float2>();
-            List<float2> maxYEdges = new List<float2>();
+            var minXEdges = new List<(float2 point, List<float2> sites)>();
+            var minYEdges = new List<(float2 point, List<float2> sites)>();
+            var maxXEdges = new List<(float2 point, List<float2> sites)>();
+            var maxYEdges = new List<(float2 point, List<float2> sites)>();
             
             /* Dual graph algorithm: Generate a new edge for each
              connected face. This will create a non-triangular structure,
@@ -97,6 +117,8 @@ namespace Delaunay.Triangulation
                         b.x >= min.x && b.x <= max.x && b.y >= min.y && b.y <= max.y)
                     {
                         dual.Add(new Edge(a, b));
+                        Polygons[edge.a].Add(new Edge(a, b));
+                        Polygons[edge.b].Add(new Edge(a, b));
                         continue;
                     }
 
@@ -108,32 +130,40 @@ namespace Delaunay.Triangulation
                         float t = (min.x - a.x) / delta.x;
                         float y = a.y + delta.y * t;
                         Edge newEdge = new Edge(new float2(min.x, y), b);
-                        minXEdges.Add(newEdge.a);
+                        minXEdges.Add((newEdge.a, new List<float2>(){edge.a, edge.b}));
                         dual.Add(newEdge);
+                        Polygons[edge.a].Add(newEdge);
+                        Polygons[edge.b].Add(newEdge);
                     }
                     else if (a.x > max.x)
                     {
                         float t = (max.x - b.x) / -delta.x;
                         float y = b.y - delta.y * t;
                         Edge newEdge = new Edge(b, new float2(max.x, y));
-                        maxXEdges.Add(newEdge.b);
+                        maxXEdges.Add((newEdge.b, new List<float2>(){edge.a, edge.b}));
                         dual.Add(newEdge);
+                        Polygons[edge.a].Add(newEdge);
+                        Polygons[edge.b].Add(newEdge);
                     }
                     else if(a.y < min.y)
                     {
                         float t = (min.y - a.y) / delta.y;
                         float x = a.x + delta.x * t;
                         Edge newEdge = new Edge(new float2(x, min.y), b);
-                        minYEdges.Add(newEdge.a);
+                        minYEdges.Add((newEdge.a, new List<float2>(){edge.a, edge.b}));
                         dual.Add(newEdge);
+                        Polygons[edge.a].Add(newEdge);
+                        Polygons[edge.b].Add(newEdge);
                     }
                     else if(a.y > max.y)
                     {
                         float t = (max.y - b.y) / -delta.y;
                         float x = b.x - delta.x * t;
                         Edge newEdge = new Edge(b, new float2(x, max.y));
-                        maxYEdges.Add(newEdge.b);
+                        maxYEdges.Add((newEdge.b, new List<float2>(){edge.a, edge.b}));
                         dual.Add(newEdge);
+                        Polygons[edge.a].Add(newEdge);
+                        Polygons[edge.b].Add(newEdge);
                     }
                     
                     if (b.x < min.x)
@@ -141,38 +171,46 @@ namespace Delaunay.Triangulation
                         float t = (min.x - b.x) / delta.x;
                         float y = b.y + delta.y * t;
                         Edge newEdge = new Edge(new float2(min.x, y), a);
-                        minXEdges.Add(newEdge.a);
+                        minXEdges.Add((newEdge.a, new List<float2>(){edge.a, edge.b}));
                         dual.Add(newEdge);
+                        Polygons[edge.a].Add(newEdge);
+                        Polygons[edge.b].Add(newEdge);
                     }
                     else if (b.x > max.x)
                     {
                         float t = (max.x - a.x) / -delta.x;
                         float y = a.y - delta.y * t;
                         Edge newEdge = new Edge(a, new float2(max.x, y));
-                        maxXEdges.Add(newEdge.b);
+                        maxXEdges.Add((newEdge.b, new List<float2>(){edge.a, edge.b}));
                         dual.Add(newEdge);
+                        Polygons[edge.a].Add(newEdge);
+                        Polygons[edge.b].Add(newEdge);
                     }
                     else if(b.y < min.y)
                     {
                         float t = (min.y - b.y) / delta.y;
                         float x = b.x + delta.x * t;
                         Edge newEdge = new Edge(new float2(x, min.y), a);
-                        minYEdges.Add(newEdge.a);
+                        minYEdges.Add((newEdge.a, new List<float2>(){edge.a, edge.b}));
                         dual.Add(newEdge);
+                        Polygons[edge.a].Add(newEdge);
+                        Polygons[edge.b].Add(newEdge);
                     }
                     else if(b.y > max.y)
                     {
                         float t = (max.y - a.y) / -delta.y;
                         float x = a.x - delta.x * t;
                         Edge newEdge = new Edge(a, new float2(x, max.y));
-                        maxYEdges.Add(newEdge.b);
+                        maxYEdges.Add((newEdge.b, new List<float2>(){edge.a, edge.b}));
                         dual.Add(newEdge);
+                        Polygons[edge.a].Add(newEdge);
+                        Polygons[edge.b].Add(newEdge);
                     }
                 }
                 else
                 {
                     /* This edge has only 1 neighbor - it is an edge edge. */
-                    /* Still generate an edge, just perpindicular to this edge and a distance outward */
+                    /* Still generate an edge, just perpendicular to this edge and a distance outward */
                     float2 a = edges[edge][0].GetCircumcenter();
                     
                     /* Before we do a lot of math, check to see if A lies within the boundary. */
@@ -185,6 +223,7 @@ namespace Delaunay.Triangulation
                     float dy = edge.b.x - edge.a.x;
 
                     /* Vertical Collision Check */
+                    /* TODO: EDGE CASE - WHAT IF BOTH VERTICES ARE OUTSIDE */
                     if (dx != 0)
                     {
                         if (dx > 0)
@@ -198,8 +237,11 @@ namespace Delaunay.Triangulation
                             {
                                 float2 b = new float2(max.x, y);
                                 Edge newEdge = new Edge(a, b);
-                                maxXEdges.Add(newEdge.b);
+                                // maxXEdges.Add(newEdge.b);
+                                maxXEdges.Add((newEdge.b, new List<float2>(){edge.a, edge.b}));
                                 dual.Add(newEdge);
+                                Polygons[edge.a].Add(newEdge);
+                                Polygons[edge.b].Add(newEdge);
                             }
                         }
                         else
@@ -213,8 +255,11 @@ namespace Delaunay.Triangulation
                             {
                                 float2 b = new float2(min.x, y);
                                 Edge newEdge = new Edge(a, b);
-                                minXEdges.Add(newEdge.b);
+                                // minXEdges.Add(newEdge.b);
+                                minXEdges.Add((newEdge.b, new List<float2>(){edge.a, edge.b}));
                                 dual.Add(newEdge);
+                                Polygons[edge.a].Add(newEdge);
+                                Polygons[edge.b].Add(newEdge);
                             }
                         }
                     }
@@ -233,8 +278,11 @@ namespace Delaunay.Triangulation
                             {
                                 float2 b = new float2(x, max.y);
                                 Edge newEdge = new Edge(a, b);
-                                maxYEdges.Add(newEdge.b);
+                                // maxYEdges.Add(newEdge.b);
+                                maxYEdges.Add((newEdge.b, new List<float2>(){edge.a, edge.b}));
                                 dual.Add(newEdge);
+                                Polygons[edge.a].Add(newEdge);
+                                Polygons[edge.b].Add(newEdge);
                             }
                         }
                         else
@@ -248,8 +296,11 @@ namespace Delaunay.Triangulation
                             {
                                 float2 b = new float2(x, min.y);
                                 Edge newEdge = new Edge(a, b);
-                                minYEdges.Add(newEdge.b);
+                                // minYEdges.Add(newEdge.b);
+                                minYEdges.Add((newEdge.b, new List<float2>(){edge.a, edge.b}));
                                 dual.Add(newEdge);
+                                Polygons[edge.a].Add(newEdge);
+                                Polygons[edge.b].Add(newEdge);
                             }
                         }
                     }
@@ -258,47 +309,84 @@ namespace Delaunay.Triangulation
 
             /* We now have internal voronoi, but edge cells need to be completed */
             /* Start by sorting each list in an order to make new edge calculation easier */
-            minXEdges.Sort((a, b) => (int)(a.y - b.y));
-            minYEdges.Sort((a, b) => (int)(a.x - b.x));
-            maxXEdges.Sort((a, b) => (int)(a.y - b.y));
-            maxYEdges.Sort((a, b) => (int)(a.x - b.x));
+            minXEdges.Sort((a, b) => (int)(a.point.y - b.point.y));
+            minYEdges.Sort((a, b) => (int)(a.point.x - b.point.x));
+            maxXEdges.Sort((a, b) => (int)(a.point.y - b.point.y));
+            maxYEdges.Sort((a, b) => (int)(a.point.x - b.point.x));
             
             /* Add edges to fill in the outer boundary of the cells */
             /* MinX */
             float2 prev = min;
             foreach (var t in minXEdges)
             {
-                dual.Add(new Edge(prev, t));
-                prev = t;
+                dual.Add(new Edge(prev, t.point));
+                
+                /* add this edge to the correct polygon */
+                t.sites.Sort((a, b) => (int) (a.y - b.y));
+                Polygons[t.sites[0]].Add(new Edge(prev, t.point));
+                
+                prev = t.point;
             }
             dual.Add(new Edge(prev, new float2(min.x, max.y)));
+            Polygons[minXEdges[^1].sites[1]].Add(new Edge(prev, new float2(min.x, max.y)));
             
             /* MaxX */
             prev = new float2(max.x, min.y);
             foreach (var vert in maxXEdges)
             {
-                dual.Add(new Edge(prev, vert));
-                prev = vert;
+                dual.Add(new Edge(prev, vert.point));
+                
+                /* add this edge to the correct polygon */
+                vert.sites.Sort((a, b) => (int) (a.y - b.y));
+                Polygons[vert.sites[0]].Add(new Edge(prev, vert.point));
+                
+                prev = vert.point;
             }
             dual.Add(new Edge(prev, max));
+            Polygons[maxXEdges[^1].sites[1]].Add(new Edge(prev, max));
+            
             
             /* MinY */
             prev = min;
             foreach (var t in minYEdges)
             {
-                dual.Add(new Edge(prev, t));
-                prev = t;
+                dual.Add(new Edge(prev, t.point));
+                
+                /* add this edge to the correct polygon */
+                t.sites.Sort((a, b) => (int) (a.x - b.x));
+                Polygons[t.sites[0]].Add(new Edge(prev, t.point));
+                
+                prev = t.point;
             }
             dual.Add(new Edge(prev, new float2(max.x, min.y)));
+            Polygons[minYEdges[^1].sites[1]].Add(new Edge(prev, new float2(max.x, min.y)));
             
             /* MaxY */
             prev = new float2(min.x, max.y);
             foreach (var vert in maxYEdges)
             {
-                dual.Add(new Edge(prev, vert));
-                prev = vert;
+                dual.Add(new Edge(prev, vert.point));
+                
+                /* add this edge to the correct polygon */
+                vert.sites.Sort((a, b) => (int) (a.x - b.x));
+                Polygons[vert.sites[0]].Add(new Edge(prev, vert.point));
+                
+                prev = vert.point;
             }
             dual.Add(new Edge(prev, max));
+            Polygons[maxYEdges[^1].sites[1]].Add(new Edge(prev, max));
+            
+            /* Assemble edges into polygons */
+            int polygonCount = 0;
+            foreach (var key in Polygons.Keys)
+            {
+                if (Polygons[key].Count > 0)
+                {
+                    polygonCount++;
+                    Debug.Log("Polygon " + key + " has " + Polygons[key].Count + " edges.");
+                }
+            }
+            Debug.Log("Assembled " + polygonCount + " polygons.");
             
             /* Return the complete dual of this mesh */
             return dual;
