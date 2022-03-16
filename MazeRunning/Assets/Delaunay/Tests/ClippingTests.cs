@@ -123,7 +123,8 @@ public class ClippingTests
     [Test]
     public void TestDiagonalClipNonCorner()
     {
-        Edge a = new Edge(new float2(-1f, 2f), new float2(13f, 7f));
+        Edge a = new Edge(new float2(-3f, 1f), new float2(12f, 6f));
+        Edge reversea = new Edge(new float2(12f, 6f), new float2(-3f, 1f));
         Edge b = new Edge(new float2(-1f, 8f), new float2(13f, 2f));
         Edge c = new Edge(new float2(2f, -1f), new float2(8f, 11f));
         Edge d = new Edge(new float2(8f, -1f), new float2(2f, 11f));
@@ -132,6 +133,7 @@ public class ClippingTests
         var rb = Clipping.ClipEdge(b, min, max);
         var rc = Clipping.ClipEdge(c, min, max);
         var rd = Clipping.ClipEdge(d, min, max);
+        var reversera = Clipping.ClipEdge(reversea, min, max);
 
         Assert.AreEqual(true, ra.isVisible);
         Assert.AreEqual(true, ra.editedEdge);
@@ -141,6 +143,14 @@ public class ClippingTests
         Assert.AreEqual(true, rc.editedEdge);
         Assert.AreEqual(true, rd.isVisible);
         Assert.AreEqual(true, rd.editedEdge);
+        Assert.AreEqual(true, reversera.isVisible);
+        Assert.AreEqual(true, reversera.editedEdge);
+        
+        Assert.AreEqual(new float2(0, 2), a.a);
+        Assert.AreEqual(new float2(10, 5.333333333333f), a.b);
+        
+        Assert.AreEqual(new float2(0, 2), reversea.b);
+        Assert.AreEqual(new float2(10, 5.333333333333f), reversea.a);
     }
 
     [Test]
