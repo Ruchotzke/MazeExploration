@@ -4,6 +4,7 @@ using Delaunay.Triangulation;
 using Unity.Mathematics;
 using UnityEngine;
 using Utilities;
+using Utilities.Meshing;
 using Mesh = Delaunay.Triangulation.Mesh;
 
 public class IrregularMazeGenerator : MonoBehaviour
@@ -11,7 +12,7 @@ public class IrregularMazeGenerator : MonoBehaviour
     [Header("Settings")]
     public Bounds Boundary;
     public float MinDistance = 1.0f;
-    public float ConnectionDistance = 1.5f;
+    public float WallHeight = 0.5f;
     
     [Header("Prefabs")]
     public Waypoint pf_Waypoint;
@@ -27,6 +28,7 @@ public class IrregularMazeGenerator : MonoBehaviour
     public bool DrawVoronoi = true;
 
     private List<AdjacencyNode> samples;
+    private Dictionary<float2, AdjacencyNode> siteToNode;
 
     private Mesh generatedMesh;
     private List<(float2 site, Polygon polygon)> generatedVoronoi;
@@ -80,15 +82,15 @@ public class IrregularMazeGenerator : MonoBehaviour
     /// <returns></returns>
     private void TriangulateMaze()
     {
-        triangulatedMesh = new UnityEngine.Mesh();
-
-        List<Vector3> verts = new List<Vector3>();
-        List<int> indices = new List<int>();
+        Mesher mesher = new Mesher();
+        Vector3 wallOffset = new Vector3(0f, WallHeight, 0f);
 
         /* Triangulate each cell */
         foreach(var cell in generatedVoronoi)
         {
             var polygon = cell.polygon;
+
+            /* Triangulate the floor */
             for(int i = 1; i < polygon.vertices.Count - 1; i++)
             {
                 /* Triangle fan */
@@ -96,21 +98,21 @@ public class IrregularMazeGenerator : MonoBehaviour
                 var b = polygon.vertices[i];
                 var c = polygon.vertices[i+1];
 
-                verts.Add(new Vector3(a.x, 0, a.y));
-                verts.Add(new Vector3(b.x, 0, b.y));
-                verts.Add(new Vector3(c.x, 0, c.y));
-                indices.Add(verts.Count - 3);
-                indices.Add(verts.Count - 2);
-                indices.Add(verts.Count - 1);
+                mesher.AddTriangle(a, b, c);
+            }
+
+            /* Triangulate the walls */
+            foreach(var edge in polygon.GetEdges())
+            {
+                Vector3 a = new Vector3(edge.a.x, 0, edge.a.y);
+                Vector3 b = new Vector3(edge.b.x, 0, edge.b.y);
+
+                mesher.AddQuad(b, a, a + wallOffset, b + wallOffset);
             }
         }
 
         /* Create the mesh */
-        triangulatedMesh.SetVertices(verts);
-        triangulatedMesh.SetTriangles(indices, 0);
-        triangulatedMesh.RecalculateBounds();
-        triangulatedMesh.RecalculateNormals();
-        triangulatedMesh.RecalculateTangents();
+        triangulatedMesh = mesher.GenerateMesh();
     }
 
     /// <summary>
@@ -177,6 +179,7 @@ public class IrregularMazeGenerator : MonoBehaviour
     void GenerateAdjacencyGraph(Mesh triangulation)
     {
         samples = new List<AdjacencyNode>();
+        siteToNode = new Dictionary<float2, AdjacencyNode>();
         Dictionary<float2, AdjacencyNode> nodeLookup = new Dictionary<float2, AdjacencyNode>();
         foreach (var triangle in triangulation.Triangles)
         {
@@ -187,12 +190,14 @@ public class IrregularMazeGenerator : MonoBehaviour
                 if (!nodeLookup.ContainsKey(edge.a))
                 {
                     AdjacencyNode node = new AdjacencyNode(new Vector3(edge.a.x, 0, edge.a.y));
+                    siteToNode.Add(edge.a, node);
                     samples.Add(node);
                     nodeLookup.Add(edge.a, node);
                 }
                 if (!nodeLookup.ContainsKey(edge.b))
                 {
                     AdjacencyNode node = new AdjacencyNode(new Vector3(edge.b.x, 0, edge.b.y));
+                    siteToNode.Add(edge.b, node);
                     samples.Add(node);
                     nodeLookup.Add(edge.b, node);
                 }

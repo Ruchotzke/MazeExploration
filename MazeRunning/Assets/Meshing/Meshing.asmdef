@@ -1,9 +1,8 @@
 {
-    "name": "Delaunay",
+    "name": "Meshing",
     "rootNamespace": "",
     "references": [
-        "GUID:d8b63aba1907145bea998dd612889d6b",
-        "GUID:acb64506af7039643b172a0f0895c692"
+        "GUID:d8b63aba1907145bea998dd612889d6b"
     ],
     "includePlatforms": [],
     "excludePlatforms": [],
