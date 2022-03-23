@@ -89,6 +89,14 @@ public class IrregularMazeGenerator : MonoBehaviour
         foreach(var cell in generatedVoronoi)
         {
             var polygon = cell.polygon;
+            AdjacencyNode node = siteToNode[cell.site];
+
+            /* Get a list of line segments to check for open walls later */
+            List<Vector3> openDirs = new List<Vector3>();
+            foreach(var neighbor in node.OpenNeighbors)
+            {
+                openDirs.Add(neighbor.position - node.position);
+            }
 
             /* Triangulate the floor */
             for(int i = 1; i < polygon.vertices.Count - 1; i++)
@@ -107,7 +115,26 @@ public class IrregularMazeGenerator : MonoBehaviour
                 Vector3 a = new Vector3(edge.a.x, 0, edge.a.y);
                 Vector3 b = new Vector3(edge.b.x, 0, edge.b.y);
 
-                mesher.AddQuad(b, a, a + wallOffset, b + wallOffset);
+                /* Check if this edge should be open. if so, don't triangulate it */
+                int i;
+                for(i = 0; i < openDirs.Count; i++)
+                {
+                    if(Mathf.Abs(Vector3.Dot((b-a), openDirs[i])) < 0.01f)
+                    {
+                        /* This wall is open */
+                        break;
+                    }
+                }
+                
+                /* If the wall is open, remove that direction and don't do anything else */
+                if(i < openDirs.Count)
+                {
+                    openDirs.RemoveAt(i);
+                }
+                else
+                {
+                    mesher.AddQuad(b, a, a + wallOffset, b + wallOffset);
+                }
             }
         }
 
@@ -138,7 +165,8 @@ public class IrregularMazeGenerator : MonoBehaviour
             
             /* explore neighbors */
             bool movedToNeighbor = false;
-            Utilities.Utilities.Shuffle(curr.Neighbors);
+            //Utilities.Utilities.Shuffle(curr.Neighbors);                                                                                          //random walk
+            curr.Neighbors.Sort((a, b) => Vector3.Distance(curr.position, a.position).CompareTo(Vector3.Distance(curr.position, b.position)));      //closest neighbor
             foreach (var neighbor in curr.Neighbors)
             {
                 /* If this node isn't in the translator, it's not visited. */

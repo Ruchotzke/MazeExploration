@@ -677,7 +677,7 @@ MonoBehaviour:
   DrawBaseGrid: 0
   DrawMazeGrid: 1
   DrawVoronoi: 1
-  Seed: 0
+  Seed: 431012031
 --- !u!4 &1736596724
 Transform:
   m_ObjectHideFlags: 0
