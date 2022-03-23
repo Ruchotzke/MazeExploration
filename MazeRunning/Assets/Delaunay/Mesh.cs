@@ -207,23 +207,19 @@ namespace Delaunay.Triangulation
             }
 
             /* Fill in the border edges */
-            minXEdges.Sort((a, b) => (int) (a.point.y - b.point.y));
-            maxXEdges.Sort((a, b) => (int) (a.point.y - b.point.y));
-            minYEdges.Sort((a, b) => (int) (a.point.x - b.point.x));
-            maxYEdges.Sort((a, b) => (int) (a.point.x - b.point.x));
-            Debug.Log("minX: " + minXEdges.Count + "\n" + string.Join("\n", minXEdges));
-            Debug.Log("maxX: " + maxXEdges.Count + "\n" + string.Join("\n", maxXEdges));
-            Debug.Log("minY: " + minYEdges.Count + "\n" + string.Join("\n", minYEdges));
-            Debug.Log("maxY: " + maxYEdges.Count + "\n" + string.Join("\n", maxYEdges));
+            minXEdges.Sort((a, b) => a.point.y.CompareTo(b.point.y));
+            maxXEdges.Sort((a, b) => a.point.y.CompareTo(b.point.y));
+            minYEdges.Sort((a, b) => a.point.x.CompareTo(b.point.x));
+            maxYEdges.Sort((a, b) => a.point.x.CompareTo(b.point.x));
             
             /* MinX */
             float2 prev = min;
             foreach (var t in minXEdges)
             {
                 dual.Add(new Edge(prev, t.point));
-                
+
                 /* add this edge to the correct polygon */
-                t.sites.Sort((a, b) => (int) (a.y - b.y));
+                t.sites.Sort((a, b) => a.y.CompareTo(b.y));
                 Polygons[t.sites[0]].Add(new Edge(prev, t.point));
                 
                 prev = t.point;
@@ -238,7 +234,7 @@ namespace Delaunay.Triangulation
                 dual.Add(new Edge(prev, t.point));
                 
                 /* add this edge to the correct polygon */
-                t.sites.Sort((a, b) => (int) (a.y - b.y));
+                t.sites.Sort((a, b) => a.y.CompareTo(b.y));
                 Polygons[t.sites[0]].Add(new Edge(prev, t.point));
                 
                 prev = t.point;
@@ -251,9 +247,9 @@ namespace Delaunay.Triangulation
             foreach (var t in minYEdges)
             {
                 dual.Add(new Edge(prev, t.point));
-                
+
                 /* add this edge to the correct polygon */
-                t.sites.Sort((a, b) => (int) (a.x - b.x));
+                t.sites.Sort((a, b) => a.x.CompareTo(b.x));
                 Polygons[t.sites[0]].Add(new Edge(prev, t.point));
                 
                 prev = t.point;
@@ -266,9 +262,9 @@ namespace Delaunay.Triangulation
             foreach (var t in maxYEdges)
             {
                 dual.Add(new Edge(prev, t.point));
-                
+
                 /* add this edge to the correct polygon */
-                t.sites.Sort((a, b) => (int) (a.x - b.x));
+                t.sites.Sort((a, b) => a.x.CompareTo(b.x));
                 Polygons[t.sites[0]].Add(new Edge(prev, t.point));
                 
                 prev = t.point;
