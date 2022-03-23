@@ -16,6 +16,11 @@ public class IrregularMazeGenerator : MonoBehaviour
     [Header("Prefabs")]
     public Waypoint pf_Waypoint;
 
+    [Header("Mesh Rendering")]
+    public MeshFilter Filter;
+    public MeshRenderer Renderer;
+    public Material RenderMaterial;
+
     [Header("Draw Settings")] 
     public bool DrawBaseGrid = true;
     public bool DrawMazeGrid = true;
@@ -26,8 +31,12 @@ public class IrregularMazeGenerator : MonoBehaviour
     private Mesh generatedMesh;
     private List<(float2 site, Polygon polygon)> generatedVoronoi;
 
+    private UnityEngine.Mesh triangulatedMesh;
+    public int Seed;
+
     private void Start()
     {
+        UnityEngine.Random.InitState(Seed);
         GenerateMaze();
     }
     
@@ -57,9 +66,53 @@ public class IrregularMazeGenerator : MonoBehaviour
         /* Create a voronoi diagram to help in mesh construction */
         generatedVoronoi = generatedMesh.GenerateDualGraph(new float2(Boundary.min.x, Boundary.min.z), new float2(Boundary.max.x, Boundary.max.z));
 
-        /* Each node is responsible for its nearby region */
+        /* We now have a maze layout picked - we now need to generate a mesh to hold this maze */
+        TriangulateMaze();
+
+        /* Apply this new mesh to the mesh renderer */
+        Filter.mesh = triangulatedMesh;
+        Renderer.material = RenderMaterial;
     }
     
+    /// <summary>
+    /// Triangulate a mesh from its voronoi polygons.
+    /// </summary>
+    /// <returns></returns>
+    private void TriangulateMaze()
+    {
+        triangulatedMesh = new UnityEngine.Mesh();
+
+        List<Vector3> verts = new List<Vector3>();
+        List<int> indices = new List<int>();
+
+        /* Triangulate each cell */
+        foreach(var cell in generatedVoronoi)
+        {
+            var polygon = cell.polygon;
+            for(int i = 1; i < polygon.vertices.Count - 1; i++)
+            {
+                /* Triangle fan */
+                var a = polygon.vertices[0];
+                var b = polygon.vertices[i];
+                var c = polygon.vertices[i+1];
+
+                verts.Add(new Vector3(a.x, 0, a.y));
+                verts.Add(new Vector3(b.x, 0, b.y));
+                verts.Add(new Vector3(c.x, 0, c.y));
+                indices.Add(verts.Count - 3);
+                indices.Add(verts.Count - 2);
+                indices.Add(verts.Count - 1);
+            }
+        }
+
+        /* Create the mesh */
+        triangulatedMesh.SetVertices(verts);
+        triangulatedMesh.SetTriangles(indices, 0);
+        triangulatedMesh.RecalculateBounds();
+        triangulatedMesh.RecalculateNormals();
+        triangulatedMesh.RecalculateTangents();
+    }
+
     /// <summary>
     /// Perform a backtracing algorithm to generate a random walk through
     /// all nodes (only once per node). No cycles - perfect maze.
@@ -193,7 +246,7 @@ public class IrregularMazeGenerator : MonoBehaviour
             Gizmos.color = Color.blue;
             foreach (var polygon in generatedVoronoi)
             {
-                foreach (var edge in polygon.polygon.edges)
+                foreach (var edge in polygon.polygon.GetEdges())
                 {
                     Gizmos.DrawLine(new Vector3(edge.a.x, 0, edge.a.y), new Vector3(edge.b.x, 0, edge.b.y));
                 }

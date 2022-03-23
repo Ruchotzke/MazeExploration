@@ -13,7 +13,9 @@ namespace Delaunay.Geometry
     public class Polygon
     {
 
-        public List<Edge> edges;
+        public List<float2> vertices;
+
+        public bool ValidPolygon = true;
         
         /// <summary>
         /// Construct a new polygon.
@@ -21,42 +23,42 @@ namespace Delaunay.Geometry
         public Polygon(List<Edge> inEdges)
         {
             /* Assemble the vertices in a correct ordering */
-            edges = new List<Edge>();
+            vertices = new List<float2>();
 
-            edges.Add(inEdges[0]);
+            vertices.Add(inEdges[0].a);
             inEdges.RemoveAt(0);
 
             while (inEdges.Count > 0)
             {
                 /* Attempt to find the connected edge */
-                Edge nextEdge = null;
+                float2? next = null;
                 foreach (var edge in inEdges)
                 {
-                    if (edge.a.Equals(edges[^1].b))
+                    if (edge.a.Equals(vertices[^1]))
                     {
                         /* This edge is the next */
-                        nextEdge = edge;
+                        next = edge.b;
                         inEdges.Remove(edge);
                         break;
                     }
-                    else if (edge.b.Equals(edges[^1].b))
+                    else if (edge.b.Equals(vertices[^1]))
                     {
                         /* Flip this edge to get the next edge */
-                        nextEdge = new Edge(edge.b, edge.a);
+                        next = edge.a;
                         inEdges.Remove(edge);
                         break;
                     }
                 }
                 
                 /* If we found an edge, continue. If no edge was found, this is an incomplete polygon */
-                if (nextEdge != null)
+                if (next != null)
                 {
-                    edges.Add(nextEdge);
+                    vertices.Add(next.Value);
                     
                     /* Sanity check - if we completely looped around, this polygon is complete. */
                     if (inEdges.Count > 0)
                     {
-                        if (edges[0].a.Equals(edges[^1].b))
+                        if (vertices[0].Equals(vertices[^1]))
                         {
                             Debug.LogWarning("Polygon formed with extra edges not used. Throwing away extras.");
                             break;
@@ -66,16 +68,54 @@ namespace Delaunay.Geometry
                 else
                 {
                     Debug.LogError("Incomplete polygon found. Breaking early." + "\n" +
-                                   "currEdges: " + string.Join(", ", edges) + "\n" +
+                                   "currVerts: " + string.Join(", ", vertices) + "\n" +
                                    "inEdges: " + string.Join(", ", inEdges));
+
+                    ValidPolygon = false;
                     break;
+                }
+            }
+
+            /* If this is a valid polygon, perform a winding order test */
+            if (ValidPolygon)
+            {
+                float3 a = new float3(vertices[0], 0.0f);
+                float3 b = new float3(vertices[1], 0.0f);
+                float3 c = new float3(vertices[2], 0.0f);
+                float windingOrder = math.cross(a - b, c - b).z;
+                if (windingOrder < 0) //check the sign of the winding order. if wrong, reverse the polygon to ensure easy triangulation
+                {
+                    /* Reverse the vertices order */
+                    var oldVerts = vertices;
+                    vertices = new List<float2>();
+                    for (int i = oldVerts.Count - 1; i >= 0; i--)
+                    {
+                        vertices.Add(oldVerts[i]);
+                    }
                 }
             }
         }
 
+        /// <summary>
+        /// Compute the edges of this polygon and return a list.
+        /// </summary>
+        /// <returns></returns>
+        public List<Edge> GetEdges()
+        {
+            List<Edge> edges = new List<Edge>();
+
+            for(int i = 0; i < vertices.Count - 1; i++)
+            {
+                edges.Add(new Edge(vertices[i], vertices[i+1]));
+            }
+            edges.Add(new Edge(vertices[^1], vertices[0]));
+
+            return edges;
+        }
+
         public override string ToString()
         {
-            return "POLY:[" + (string.Join(", ", edges)) +  "]";
+            return "POLY:[" + (string.Join(", ", vertices)) +  "]";
         }
     }
 }
