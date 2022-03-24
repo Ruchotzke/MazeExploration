@@ -280,7 +280,6 @@ namespace Delaunay.Triangulation
                 polygonOutput.Add((key, new Polygon(Polygons[key])));
                 polygonCount++;
             }
-            Debug.Log("Assembled " + polygonCount + " polygons.");
             
             /* Return the complete dual of this mesh */
             return polygonOutput;

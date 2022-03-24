@@ -10,9 +10,10 @@ using Mesh = Delaunay.Triangulation.Mesh;
 public class IrregularMazeGenerator : MonoBehaviour
 {
     [Header("Settings")]
-    public Bounds Boundary;
-    public float MinDistance = 1.0f;
-    public float WallHeight = 0.5f;
+    public Bounds Boundary;                 /* The general rectangular region to shape the maze */
+    public float MinDistance = 1.0f;        /* The minimum distance between cells */
+    public float WallHeight = 0.5f;         /* The height of the generated walls */
+    public float BorderThickness = 0.1f;    /* The percentage of the original cells which should become border */
     
     [Header("Prefabs")]
     public Waypoint pf_Waypoint;
@@ -86,10 +87,14 @@ public class IrregularMazeGenerator : MonoBehaviour
         Vector3 wallOffset = new Vector3(0f, WallHeight, 0f);
 
         /* Triangulate each cell */
+        float2 scaleFactor = new float2(1.0f - BorderThickness, 1.0f - BorderThickness);
         foreach(var cell in generatedVoronoi)
         {
             var polygon = cell.polygon;
             AdjacencyNode node = siteToNode[cell.site];
+
+            /* Scale the polygon down by a small amount */
+            polygon.ScalePolygon(scaleFactor);
 
             /* Get a list of line segments to check for open walls later */
             List<Vector3> openDirs = new List<Vector3>();

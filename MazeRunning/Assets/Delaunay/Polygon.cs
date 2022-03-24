@@ -113,6 +113,36 @@ namespace Delaunay.Geometry
             return edges;
         }
 
+        /// <summary>
+        /// Scale the polygon (relative to its center) by the scale provided.
+        /// Does not need to be uniform, thus the float2 argument.
+        /// </summary>
+        /// <param name="scale">The multiplier for local vertex positions.</param>
+        public void ScalePolygon(float2 scale)
+        {
+            /* Compute the center of this polygon */
+            float2 center = float2.zero;
+            foreach(var vert in vertices)
+            {
+                center += vert;
+            }
+            center /= vertices.Count;
+
+            /* Generate a list of localPositions */
+            /* Scale the positions as well while we are iterating */
+            /* To finish the scale, move the transformed vertex back into position */
+            List<float2> local = new List<float2>();
+            foreach(var vert in vertices)
+            {
+                float2 localVert = vert - center;
+                localVert *= scale;
+                local.Add(localVert + center);
+            }
+
+            /* Move the vertices back into the list */
+            vertices = local;
+        }
+
         public override string ToString()
         {
             return "POLY:[" + (string.Join(", ", vertices)) +  "]";
