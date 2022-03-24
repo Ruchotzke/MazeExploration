@@ -10,6 +10,7 @@ using Mesh = Delaunay.Triangulation.Mesh;
 public class IrregularMazeGenerator : MonoBehaviour
 {
     [Header("Settings")]
+    public int Seed;                        /* The random seed used for this maze */
     public Bounds Boundary;                 /* The general rectangular region to shape the maze */
     public float MinDistance = 1.0f;        /* The minimum distance between cells */
     public float WallHeight = 0.5f;         /* The height of the generated walls */
@@ -19,9 +20,8 @@ public class IrregularMazeGenerator : MonoBehaviour
     public Waypoint pf_Waypoint;
 
     [Header("Mesh Rendering")]
-    public MeshFilter Filter;
-    public MeshRenderer Renderer;
-    public Material RenderMaterial;
+    public MeshFilter FloorFilter;
+    public MeshFilter WallFilter;
 
     [Header("Draw Settings")] 
     public bool DrawBaseGrid = true;
@@ -34,8 +34,9 @@ public class IrregularMazeGenerator : MonoBehaviour
     private Mesh generatedMesh;
     private List<(float2 site, Polygon polygon)> generatedVoronoi;
 
-    private UnityEngine.Mesh triangulatedMesh;
-    public int Seed;
+    private UnityEngine.Mesh triangulatedFloorMesh;
+    private UnityEngine.Mesh triangulatedWallMesh;
+    
 
     private void Start()
     {
@@ -73,8 +74,8 @@ public class IrregularMazeGenerator : MonoBehaviour
         TriangulateMaze();
 
         /* Apply this new mesh to the mesh renderer */
-        Filter.mesh = triangulatedMesh;
-        Renderer.material = RenderMaterial;
+        FloorFilter.mesh = triangulatedFloorMesh;
+        WallFilter.mesh = triangulatedWallMesh;
     }
     
     /// <summary>
@@ -83,18 +84,19 @@ public class IrregularMazeGenerator : MonoBehaviour
     /// <returns></returns>
     private void TriangulateMaze()
     {
-        Mesher mesher = new Mesher();
+        Mesher floorMesher = new Mesher();
+        Mesher wallMesher = new Mesher();
         Vector3 wallOffset = new Vector3(0f, WallHeight, 0f);
+        float2 scaleFactor = new float2(1.0f - BorderThickness, 1.0f - BorderThickness);
 
         /* Triangulate each cell */
-        float2 scaleFactor = new float2(1.0f - BorderThickness, 1.0f - BorderThickness);
-        foreach(var cell in generatedVoronoi)
+        foreach (var cell in generatedVoronoi)
         {
             var polygon = cell.polygon;
             AdjacencyNode node = siteToNode[cell.site];
 
             /* Scale the polygon down by a small amount */
-            polygon.ScalePolygon(scaleFactor);
+            if(BorderThickness > 0.0f) polygon.ScalePolygon(scaleFactor);
 
             /* Get a list of line segments to check for open walls later */
             List<Vector3> openDirs = new List<Vector3>();
@@ -111,7 +113,7 @@ public class IrregularMazeGenerator : MonoBehaviour
                 var b = polygon.vertices[i];
                 var c = polygon.vertices[i+1];
 
-                mesher.AddTriangle(a, b, c);
+                floorMesher.AddTriangle(a, b, c);
             }
 
             /* Triangulate the walls */
@@ -124,7 +126,7 @@ public class IrregularMazeGenerator : MonoBehaviour
                 int i;
                 for(i = 0; i < openDirs.Count; i++)
                 {
-                    if(Mathf.Abs(Vector3.Dot((b-a), openDirs[i])) < 0.01f)
+                    if(Mathf.Abs(Vector3.Dot((b-a), openDirs[i])) < 0.001f)
                     {
                         /* This wall is open */
                         break;
@@ -138,13 +140,14 @@ public class IrregularMazeGenerator : MonoBehaviour
                 }
                 else
                 {
-                    mesher.AddQuad(b, a, a + wallOffset, b + wallOffset);
+                    wallMesher.AddQuad(b, a, a + wallOffset, b + wallOffset);
                 }
             }
         }
 
         /* Create the mesh */
-        triangulatedMesh = mesher.GenerateMesh();
+        triangulatedFloorMesh = floorMesher.GenerateMesh();
+        triangulatedWallMesh = wallMesher.GenerateMesh();
     }
 
     /// <summary>
