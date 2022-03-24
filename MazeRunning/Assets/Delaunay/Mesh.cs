@@ -67,7 +67,7 @@ namespace Delaunay.Triangulation
         /// <param name="min">The lower left corner of the rect containing this dual graph</param>
         /// <param name="max">The upper right corner of the rect containing this dual graph.</param>
         /// <returns>A list relating sites to voronoi polygons.</returns>
-        public List<(float2 site, Polygon polygon)> GenerateDualGraph(float2 min, float2 max)
+        public (List<(float2 site, Polygon polygon)> voronoi, List<float2> circumcenters) GenerateDualGraph(float2 min, float2 max)
         {
             /* Generate a list of edges in the current mesh */
             var edges = GetEdges();
@@ -75,6 +75,7 @@ namespace Delaunay.Triangulation
             /* Create a container for the output structure */
             List<Edge> dual = new List<Edge>();
             Dictionary<float2, List<Edge>> Polygons = new Dictionary<float2, List<Edge>>(); //a mapping from sites to a list of edges
+            Dictionary<float2, byte> CircumcenterDict = new Dictionary<float2, byte>();
 
             /* To simplify the voronoi code below, add all sites to the polygons dictionary */
             foreach (var tri in Triangles)
@@ -112,7 +113,10 @@ namespace Delaunay.Triangulation
                 {
                     float2 a = edges[edge][0].GetCircumcenter();
                     float2 b = edges[edge][1].GetCircumcenter();
-                    
+
+                    if (!CircumcenterDict.ContainsKey(a)) CircumcenterDict.Add(a, 0);
+                    if (!CircumcenterDict.ContainsKey(b)) CircumcenterDict.Add(b, 0);
+
                     /* Generate a new edge and clip it*/
                     Edge voronoiEdge = new Edge(a, b);
                     var clipResult = Clipping.ClipEdge(voronoiEdge, min, max);
@@ -280,9 +284,13 @@ namespace Delaunay.Triangulation
                 polygonOutput.Add((key, new Polygon(Polygons[key])));
                 polygonCount++;
             }
+
+            /* Assemble circumcenters into a list to return */
+            List<float2> circumcenters = new List<float2>();
+            circumcenters.AddRange(CircumcenterDict.Keys);
             
             /* Return the complete dual of this mesh */
-            return polygonOutput;
+            return (polygonOutput, circumcenters);
         }
 
         /// <summary>

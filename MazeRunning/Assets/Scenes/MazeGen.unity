@@ -753,7 +753,7 @@ MonoBehaviour:
     m_Extent: {x: 15, y: 1, z: 15}
   MinDistance: 1
   WallHeight: 0.5
-  BorderThickness: 0
+  BorderThickness: 0.08
   pf_Waypoint: {fileID: 5910199848373282456, guid: b3fd0034894a3544aa17388f4c0a9002,
     type: 3}
   FloorFilter: {fileID: 62536539}

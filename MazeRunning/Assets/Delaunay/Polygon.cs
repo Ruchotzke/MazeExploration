@@ -97,6 +97,16 @@ namespace Delaunay.Geometry
         }
 
         /// <summary>
+        /// A private constructor which just assigns directly, doesn't need to do the extra
+        /// polygonization from edges.
+        /// </summary>
+        /// <param name="verts"></param>
+        private Polygon(List<float2> verts)
+        {
+            vertices = verts;
+        }
+
+        /// <summary>
         /// Compute the edges of this polygon and return a list.
         /// </summary>
         /// <returns></returns>
@@ -118,7 +128,8 @@ namespace Delaunay.Geometry
         /// Does not need to be uniform, thus the float2 argument.
         /// </summary>
         /// <param name="scale">The multiplier for local vertex positions.</param>
-        public void ScalePolygon(float2 scale)
+        /// <returns>A new polygon which is a scaled version of this one.</returns>
+        public Polygon ScalePolygon(float2 scale)
         {
             /* Compute the center of this polygon */
             float2 center = float2.zero;
@@ -139,8 +150,8 @@ namespace Delaunay.Geometry
                 local.Add(localVert + center);
             }
 
-            /* Move the vertices back into the list */
-            vertices = local;
+            /* Generate a new polygon to return */
+            return new Polygon(local);
         }
 
         public override string ToString()

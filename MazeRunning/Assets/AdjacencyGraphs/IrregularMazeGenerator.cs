@@ -33,6 +33,7 @@ public class IrregularMazeGenerator : MonoBehaviour
 
     private Mesh generatedMesh;
     private List<(float2 site, Polygon polygon)> generatedVoronoi;
+    private List<float2> circumcenters;
 
     private UnityEngine.Mesh triangulatedFloorMesh;
     private UnityEngine.Mesh triangulatedWallMesh;
@@ -68,7 +69,9 @@ public class IrregularMazeGenerator : MonoBehaviour
         DoBacktrace(samples[0]);
 
         /* Create a voronoi diagram to help in mesh construction */
-        generatedVoronoi = generatedMesh.GenerateDualGraph(new float2(Boundary.min.x, Boundary.min.z), new float2(Boundary.max.x, Boundary.max.z));
+        var dual = generatedMesh.GenerateDualGraph(new float2(Boundary.min.x, Boundary.min.z), new float2(Boundary.max.x, Boundary.max.z));
+        generatedVoronoi = dual.voronoi;
+        circumcenters = dual.circumcenters;
 
         /* We now have a maze layout picked - we now need to generate a mesh to hold this maze */
         TriangulateMaze();
@@ -96,7 +99,15 @@ public class IrregularMazeGenerator : MonoBehaviour
             AdjacencyNode node = siteToNode[cell.site];
 
             /* Scale the polygon down by a small amount */
-            if(BorderThickness > 0.0f) polygon.ScalePolygon(scaleFactor);
+            Polygon shrunkPolygon = null;
+            if (BorderThickness > 0.0f)
+            {
+                shrunkPolygon = polygon.ScalePolygon(scaleFactor);
+            }
+            else
+            {
+                shrunkPolygon = polygon;
+            }
 
             /* Get a list of line segments to check for open walls later */
             List<Vector3> openDirs = new List<Vector3>();
@@ -106,19 +117,24 @@ public class IrregularMazeGenerator : MonoBehaviour
             }
 
             /* Triangulate the floor */
-            for(int i = 1; i < polygon.vertices.Count - 1; i++)
+            for(int i = 1; i < shrunkPolygon.vertices.Count - 1; i++)
             {
                 /* Triangle fan */
-                var a = polygon.vertices[0];
-                var b = polygon.vertices[i];
-                var c = polygon.vertices[i+1];
+                var a = shrunkPolygon.vertices[0];
+                var b = shrunkPolygon.vertices[i];
+                var c = shrunkPolygon.vertices[i+1];
 
                 floorMesher.AddTriangle(a, b, c);
             }
 
             /* Triangulate the walls */
-            foreach(var edge in polygon.GetEdges())
+            var originalEdges = BorderThickness > 0.0f ? polygon.GetEdges() : null;
+            var shrunkEdges = shrunkPolygon.GetEdges();
+            for(int e = 0; e < shrunkEdges.Count; e++)
             {
+                Edge edge = shrunkEdges[e];
+                Edge originalEdge = BorderThickness > 0.0f ? originalEdges[e] : null;
+
                 Vector3 a = new Vector3(edge.a.x, 0, edge.a.y);
                 Vector3 b = new Vector3(edge.b.x, 0, edge.b.y);
 
@@ -140,7 +156,25 @@ public class IrregularMazeGenerator : MonoBehaviour
                 }
                 else
                 {
-                    wallMesher.AddQuad(b, a, a + wallOffset, b + wallOffset);
+                    /* We need to triangulate our inner wall and half of the thickness on top */
+                    /* We then use columns to cover up the edge thicknesses */
+                    wallMesher.AddQuad(b, a, a + wallOffset, b + wallOffset);   /* Inner wall */
+
+                    /* To add thickness, we just triangulate the quad between the shrunk and original versions */
+                    if(BorderThickness > 0.0f)
+                    {
+                        /* make v3s for original borders */
+                        Vector3 oa = new Vector3(originalEdge.a.x, 0, originalEdge.a.y);
+                        Vector3 ob = new Vector3(originalEdge.b.x, 0, originalEdge.b.y);
+
+                        /* Top of wall */
+                        wallMesher.AddQuad(a + wallOffset, oa + wallOffset, ob + wallOffset, b + wallOffset);
+
+                        /* Sides of wall */
+                        wallMesher.AddQuad(a, oa, oa + wallOffset, a + wallOffset);
+                        wallMesher.AddQuad(b, ob, ob + wallOffset, b + wallOffset);
+                    }
+
                 }
             }
         }
@@ -293,5 +327,43 @@ public class IrregularMazeGenerator : MonoBehaviour
                 }
             }
         }
+    }
+
+
+    /// <summary>
+    /// Copied from https://forum.unity.com/threads/line-intersection.17384/
+    /// </summary>
+    /// <param name="line1point1"></param>
+    /// <param name="line1point2"></param>
+    /// <param name="line2point1"></param>
+    /// <param name="line2point2"></param>
+    /// <returns></returns>
+    static bool FasterLineSegmentIntersection(Vector2 line1point1, Vector2 line1point2, Vector2 line2point1, Vector2 line2point2)
+    {
+
+        Vector2 a = line1point2 - line1point1;
+        Vector2 b = line2point1 - line2point2;
+        Vector2 c = line1point1 - line2point1;
+
+        float alphaNumerator = b.y * c.x - b.x * c.y;
+        float betaNumerator = a.x * c.y - a.y * c.x;
+        float denominator = a.y * b.x - a.x * b.y;
+
+        if (denominator == 0)
+        {
+            return false;
+        }
+        else if (denominator > 0)
+        {
+            if (alphaNumerator < 0 || alphaNumerator > denominator || betaNumerator < 0 || betaNumerator > denominator)
+            {
+                return false;
+            }
+        }
+        else if (alphaNumerator > 0 || alphaNumerator < denominator || betaNumerator > 0 || betaNumerator < denominator)
+        {
+            return false;
+        }
+        return true;
     }
 }
