@@ -13,6 +13,7 @@ public class IrregularMazeGenerator : MonoBehaviour
     public int Seed;                        /* The random seed used for this maze */
     public Bounds Boundary;                 /* The general rectangular region to shape the maze */
     public float MinDistance = 1.0f;        /* The minimum distance between cells */
+    public float MinOpenWallLength = 1.0f;  /* The minimum length a wall must be to be considered for an opening */
     public float WallHeight = 0.5f;         /* The height of the generated walls */
     public float BorderThickness = 0.1f;    /* The percentage of the original cells which should become border */
     
@@ -62,19 +63,19 @@ public class IrregularMazeGenerator : MonoBehaviour
         /* Clip out very skinny triangles from the generated triangulation */
         generatedMesh.RemoveSkinnyTriangles();
 
-        /* Build up an adjacency graph */
-        GenerateAdjacencyGraph(generatedMesh);
-        
-        /* Backtrace over the graph to generate a maze */
-        DoBacktrace(samples[0]);
-
         /* Create a voronoi diagram to help in mesh construction */
         var dual = generatedMesh.GenerateDualGraph(new float2(Boundary.min.x, Boundary.min.z), new float2(Boundary.max.x, Boundary.max.z));
         generatedVoronoi = dual.voronoi;
         circumcenters = dual.circumcenters;
 
+        /* Build up an adjacency graph */
+        GenerateAdjacencyGraph(MinOpenWallLength);
+
+        /* Backtrace over the graph to generate a maze */
+        DoBacktrace(samples[0]);
+
         /* We now have a maze layout picked - we now need to generate a mesh to hold this maze */
-        TriangulateMaze();
+        //TriangulateMaze();
 
         /* Apply this new mesh to the mesh renderer */
         FloorFilter.mesh = triangulatedFloorMesh;
@@ -207,8 +208,8 @@ public class IrregularMazeGenerator : MonoBehaviour
             
             /* explore neighbors */
             bool movedToNeighbor = false;
-            //Utilities.Utilities.Shuffle(curr.Neighbors);                                                                                          //random walk
-            curr.Neighbors.Sort((a, b) => Vector3.Distance(curr.position, a.position).CompareTo(Vector3.Distance(curr.position, b.position)));      //closest neighbor
+            Utilities.Utilities.Shuffle(curr.Neighbors);                                                                                          //random walk
+            //curr.Neighbors.Sort((a, b) => Vector3.Distance(curr.position, a.position).CompareTo(Vector3.Distance(curr.position, b.position)));      //closest neighbor
             foreach (var neighbor in curr.Neighbors)
             {
                 /* If this node isn't in the translator, it's not visited. */
@@ -244,42 +245,48 @@ public class IrregularMazeGenerator : MonoBehaviour
     }
 
     /// <summary>
-    /// Generate an adjacency graph from the triangulation provided.
+    /// Generate an adjacency graph from the generated voronoi polygons.
     /// </summary>
-    void GenerateAdjacencyGraph(Mesh triangulation)
+    void GenerateAdjacencyGraph(float minimumEdgeSize)
     {
-        samples = new List<AdjacencyNode>();
-        siteToNode = new Dictionary<float2, AdjacencyNode>();
-        Dictionary<float2, AdjacencyNode> nodeLookup = new Dictionary<float2, AdjacencyNode>();
-        foreach (var triangle in triangulation.Triangles)
+        /* First catalogue all edge / polygon pairs in the dual graph */
+        Dictionary<Edge, AdjacencyNode> borders = new Dictionary<Edge, AdjacencyNode>();
+        Dictionary<Polygon, AdjacencyNode> polyToNode = new Dictionary<Polygon, AdjacencyNode>();
+        Dictionary<AdjacencyNode, Polygon> nodeToPoly = new Dictionary<AdjacencyNode, Polygon>();
+
+        /* Each time an edge is shared update the adjacency graph */
+        foreach(var site in generatedVoronoi)
         {
-            /* Foreach edge, build the adjacency list of the nodes */
-            foreach (var edge in triangle.GetEdges())
+            Polygon poly = site.polygon;
+
+            /* Record this polygon into an adjacency node */
+            AdjacencyNode node = new AdjacencyNode(new Vector3(site.site.x, 0, site.site.y));
+            polyToNode.Add(poly, node);
+            nodeToPoly.Add(node, poly);
+
+            /* Catalogue each edge */
+            foreach(var edge in poly.GetEdges())
             {
-                /* If these are new adjacency nodes, generate them */
-                if (!nodeLookup.ContainsKey(edge.a))
+                if (!borders.ContainsKey(edge))
                 {
-                    AdjacencyNode node = new AdjacencyNode(new Vector3(edge.a.x, 0, edge.a.y));
-                    siteToNode.Add(edge.a, node);
-                    samples.Add(node);
-                    nodeLookup.Add(edge.a, node);
+                    borders.Add(edge, node);
                 }
-                if (!nodeLookup.ContainsKey(edge.b))
+                else
                 {
-                    AdjacencyNode node = new AdjacencyNode(new Vector3(edge.b.x, 0, edge.b.y));
-                    siteToNode.Add(edge.b, node);
-                    samples.Add(node);
-                    nodeLookup.Add(edge.b, node);
+                    /* Before we connect this edge, make sure this edge is large enough to consider making open */
+                    if(math.distance(edge.a, edge.b) >= minimumEdgeSize)
+                    {
+                        borders[edge].Neighbors.Add(node);
+                        node.Neighbors.Add(borders[edge]);
+                    }
                 }
-                
-                /* We can now update our adjacency lists */
-                AdjacencyNode a = nodeLookup[edge.a];
-                AdjacencyNode b = nodeLookup[edge.b];
-        
-                if (!a.Neighbors.Contains(b)) a.Neighbors.Add(b);
-                if (!b.Neighbors.Contains(a)) b.Neighbors.Add(a);
             }
         }
+
+        /* Create a normal list to store the adjacency nodes into */
+        samples = new List<AdjacencyNode>();
+        samples.AddRange(nodeToPoly.Keys);
+
     }
 
     private void OnDrawGizmosSelected()
