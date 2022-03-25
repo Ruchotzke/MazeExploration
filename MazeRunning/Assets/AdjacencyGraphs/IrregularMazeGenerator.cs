@@ -158,36 +158,71 @@ public class IrregularMazeGenerator : MonoBehaviour
                     /* Triangulate the inner portion of the wall */
                     wallMesher.AddQuad(b, a, a + wallOffset, b + wallOffset);
 
-                    /* Triangulate the top of the wall */
-                    wallMesher.AddQuad(b + wallOffset, a + wallOffset, oa + wallOffset, ob + wallOffset);
+                    /* We only need to triangulate the rest if this edge is shared and is +z or z=0 and +x */
+                    if(opposition == null)
+                    {
+                        /* Triangulate the top of the wall, it's a border so we are always responsible */
+                        wallMesher.AddQuad(b + wallOffset, a + wallOffset, oa + wallOffset, ob + wallOffset);
+                    }
+                    else
+                    {
+                        /* This wall is shared - only triangulate if we are responsible */
+                        var deltaPos = opposition.position - node.position;
+                        if (deltaPos.z > 0 || deltaPos.z == 0 && deltaPos.x > 0)
+                        {
+                            /* Triangulate the top of this wall all the way across */
+                            /* Start by finding the matching indices for the two polygons to get positions */
+                            int aMatchIndex = -1, bMatchIndex = -1;
+                            var otherPoly = nodeToPoly[opposition];
+                            for (int index = 0; index < otherPoly.vertices.Count; index++)
+                            {
+                                if (otherPoly.vertices[index].Equals(originalEdge.a)) aMatchIndex = index;
+                                if (otherPoly.vertices[index].Equals(originalEdge.b)) bMatchIndex = index;
+
+                                if (aMatchIndex >= 0 && bMatchIndex >= 0) break;
+                            }
+
+                            /* Triangulate the floor across the gap */
+                            float2 oppA = scaledPolygons[otherPoly].vertices[aMatchIndex];
+                            float2 oppB = scaledPolygons[otherPoly].vertices[bMatchIndex];
+                            Vector3 oppAV = new Vector3(oppA.x, 0, oppA.y);
+                            Vector3 oppBV = new Vector3(oppB.x, 0, oppB.y);
+                            wallMesher.AddQuad(b + wallOffset, a + wallOffset, oppAV + wallOffset, oppBV + wallOffset);
+                        }
+                    }
+
+                    
                 }
                 else
                 {
                     /* We need to bridge the gap between the two cells */
+                    /* We are only responsible for a brige if it's +z or z=0 AND +x */
+                    var deltaPos = opposition.position - node.position;
 
-                    /* Start by finding the matching indices for the two polygons to get positions */
-                    int aMatchIndex = -1, bMatchIndex = -1;
-                    var otherPoly = nodeToPoly[opposition];
-                    for(int index = 0; index < otherPoly.vertices.Count; index++)
+                    if (deltaPos.z > 0 || deltaPos.z == 0 && deltaPos.x > 0)
                     {
-                        if (otherPoly.vertices[index].Equals(originalEdge.a)) aMatchIndex = index;
-                        if (otherPoly.vertices[index].Equals(originalEdge.b)) bMatchIndex = index;
+                        /* Start by finding the matching indices for the two polygons to get positions */
+                        int aMatchIndex = -1, bMatchIndex = -1;
+                        var otherPoly = nodeToPoly[opposition];
+                        for (int index = 0; index < otherPoly.vertices.Count; index++)
+                        {
+                            if (otherPoly.vertices[index].Equals(originalEdge.a)) aMatchIndex = index;
+                            if (otherPoly.vertices[index].Equals(originalEdge.b)) bMatchIndex = index;
 
-                        if (aMatchIndex >= 0 && bMatchIndex >= 0) break;
+                            if (aMatchIndex >= 0 && bMatchIndex >= 0) break;
+                        }
+
+                        /* Triangulate the floor across the gap */
+                        float2 oppA = scaledPolygons[otherPoly].vertices[aMatchIndex];
+                        float2 oppB = scaledPolygons[otherPoly].vertices[bMatchIndex];
+                        Vector3 oppAV = new Vector3(oppA.x, 0, oppA.y);
+                        Vector3 oppBV = new Vector3(oppB.x, 0, oppB.y);
+                        floorMesher.AddQuad(b, a, oppAV, oppBV);
+
+                        /* Triangulate the wall pieces left */
+                        //wallMesher.AddQuad(a, halfA, halfA + wallOffset, a + wallOffset);
+                        //wallMesher.AddQuad(b, halfB, halfB + wallOffset, b + wallOffset);
                     }
-
-                    /* Triangulate the floor across the gap */
-                    float2 oppA = scaledPolygons[otherPoly].vertices[aMatchIndex];
-                    float2 oppB = scaledPolygons[otherPoly].vertices[bMatchIndex];
-                    Vector3 oppAV = new Vector3(oppA.x, 0, oppA.y);
-                    Vector3 oppBV = new Vector3(oppB.x, 0, oppB.y);
-                    Vector3 halfA = Vector3.Lerp(a, oppAV, 0.5f);
-                    Vector3 halfB = Vector3.Lerp(b, oppBV, 0.5f);
-                    floorMesher.AddQuad(b, a, halfA, halfB);
-
-                    /* Triangulate the wall pieces left */
-                    wallMesher.AddQuad(a, halfA, halfA + wallOffset, a + wallOffset);
-                    wallMesher.AddQuad(b, halfB, halfB + wallOffset, b + wallOffset);
                 }
             }
 
@@ -196,97 +231,6 @@ public class IrregularMazeGenerator : MonoBehaviour
         /* Our meshes are complete. Finish and assign them */
         triangulatedFloorMesh = floorMesher.GenerateMesh();
         triangulatedWallMesh = wallMesher.GenerateMesh();
-
-        ///* Triangulate each cell */
-        //foreach (var cell in generatedVoronoi)
-        //{
-        //    var polygon = cell.polygon;
-        //    AdjacencyNode node = siteToNode[cell.site];
-
-        //    /* Scale the polygon down by a small amount */
-        //    Polygon shrunkPolygon = null;
-        //    if (BorderThickness > 0.0f)
-        //    {
-        //        shrunkPolygon = polygon.ScalePolygon(scaleFactor);
-        //    }
-        //    else
-        //    {
-        //        shrunkPolygon = polygon;
-        //    }
-
-        //    /* Get a list of line segments to check for open walls later */
-        //    List<Vector3> openDirs = new List<Vector3>();
-        //    foreach(var neighbor in node.OpenNeighbors)
-        //    {
-        //        openDirs.Add(neighbor.position - node.position);
-        //    }
-
-        //    /* Triangulate the floor */
-        //    for(int i = 1; i < shrunkPolygon.vertices.Count - 1; i++)
-        //    {
-        //        /* Triangle fan */
-        //        var a = shrunkPolygon.vertices[0];
-        //        var b = shrunkPolygon.vertices[i];
-        //        var c = shrunkPolygon.vertices[i+1];
-
-        //        floorMesher.AddTriangle(a, b, c);
-        //    }
-
-        //    /* Triangulate the walls */
-        //    var originalEdges = BorderThickness > 0.0f ? polygon.GetEdges() : null;
-        //    var shrunkEdges = shrunkPolygon.GetEdges();
-        //    for(int e = 0; e < shrunkEdges.Count; e++)
-        //    {
-        //        Edge edge = shrunkEdges[e];
-        //        Edge originalEdge = BorderThickness > 0.0f ? originalEdges[e] : null;
-
-        //        Vector3 a = new Vector3(edge.a.x, 0, edge.a.y);
-        //        Vector3 b = new Vector3(edge.b.x, 0, edge.b.y);
-
-        //        /* Check if this edge should be open. if so, don't triangulate it */
-        //        int i;
-        //        for(i = 0; i < openDirs.Count; i++)
-        //        {
-        //            if(Mathf.Abs(Vector3.Dot((b-a), openDirs[i])) < 0.001f)
-        //            {
-        //                /* This wall is open */
-        //                break;
-        //            }
-        //        }
-
-        //        /* If the wall is open, remove that direction and don't do anything else */
-        //        if(i < openDirs.Count)
-        //        {
-        //            openDirs.RemoveAt(i);
-        //        }
-        //        else
-        //        {
-        //            /* We need to triangulate our inner wall and half of the thickness on top */
-        //            /* We then use columns to cover up the edge thicknesses */
-        //            wallMesher.AddQuad(b, a, a + wallOffset, b + wallOffset);   /* Inner wall */
-
-        //            /* To add thickness, we just triangulate the quad between the shrunk and original versions */
-        //            if(BorderThickness > 0.0f)
-        //            {
-        //                /* make v3s for original borders */
-        //                Vector3 oa = new Vector3(originalEdge.a.x, 0, originalEdge.a.y);
-        //                Vector3 ob = new Vector3(originalEdge.b.x, 0, originalEdge.b.y);
-
-        //                /* Top of wall */
-        //                wallMesher.AddQuad(a + wallOffset, oa + wallOffset, ob + wallOffset, b + wallOffset);
-
-        //                /* Sides of wall */
-        //                wallMesher.AddQuad(a, oa, oa + wallOffset, a + wallOffset);
-        //                wallMesher.AddQuad(b, ob, ob + wallOffset, b + wallOffset);
-        //            }
-
-        //        }
-        //    }
-        //}
-
-        ///* Create the mesh */
-        //triangulatedFloorMesh = floorMesher.GenerateMesh();
-        //triangulatedWallMesh = wallMesher.GenerateMesh();
     }
 
     /// <summary>
@@ -316,6 +260,9 @@ public class IrregularMazeGenerator : MonoBehaviour
             //curr.Neighbors.Sort((a, b) => Vector3.Distance(curr.position, a.position).CompareTo(Vector3.Distance(curr.position, b.position)));      //closest neighbor
             foreach (var neighbor in curr.Neighbors)
             {
+                /* If this node is forced to be closed, we shouldn't consider it at all */
+                if (curr.ForceClosedNeighbors.Contains(neighbor)) continue;
+
                 /* If this node isn't in the translator, it's not visited. */
                 if (!translator.ContainsKey(neighbor))
                 {
@@ -377,13 +324,16 @@ public class IrregularMazeGenerator : MonoBehaviour
                 }
                 else
                 {
-                    /* Before we connect this edge, make sure this edge is large enough to consider making open */
-                    if(math.distance(edge.a, edge.b) >= minimumEdgeSize)
+                    edgeToNodeBorder[edge].Add(node);
+                    edgeToNodeBorder[edge][0].Neighbors.Add(node);
+                    node.Neighbors.Add(edgeToNodeBorder[edge][0]);
+
+                    /* If the edge is small, make sure it is never allowed to be opened */
+                    /* This is needed for proper triangulation */
+                    if (math.distance(edge.a, edge.b) < minimumEdgeSize)
                     {
-                        edgeToNodeBorder[edge].Add(node);
-                        if (edgeToNodeBorder[edge].Count > 2) Debug.LogError("TOO MANY BORDER NODES. SANITY CHECK.");
-                        edgeToNodeBorder[edge][0].Neighbors.Add(node);
-                        node.Neighbors.Add(edgeToNodeBorder[edge][0]);
+                        edgeToNodeBorder[edge][0].ForceClosedNeighbors.Add(node);
+                        node.ForceClosedNeighbors.Add(edgeToNodeBorder[edge][0]);
                     }
                 }
             }
