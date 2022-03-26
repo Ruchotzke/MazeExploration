@@ -6,6 +6,7 @@ using UnityEngine;
 using Utilities;
 using Utilities.Meshing;
 using Mesh = Delaunay.Triangulation.Mesh;
+using Random = UnityEngine.Random;
 
 public class IrregularMazeGenerator : MonoBehaviour
 {
@@ -70,6 +71,19 @@ public class IrregularMazeGenerator : MonoBehaviour
 
         /* Create a voronoi diagram to help in mesh construction */
         generatedVoronoi = generatedMesh.GenerateDualGraph(new float2(Boundary.min.x, Boundary.min.z), new float2(Boundary.max.x, Boundary.max.z));
+
+        List<(float2 site, Polygon polygon)> intersection = new List<(float2 site, Polygon polygon)>();
+        foreach(var polygon in generatedVoronoi)
+        {
+            if(math.distance(polygon.site, float2.zero) < 60f)
+            {
+                intersection.Add(polygon);
+            }
+        }
+        foreach(var bad in intersection)
+        {
+            generatedVoronoi.Remove(bad);
+        }
 
         /* Build up an adjacency graph */
         GenerateAdjacencyGraph(MinOpenWallLength);
@@ -165,7 +179,8 @@ public class IrregularMazeGenerator : MonoBehaviour
                     if (opposition == null)
                     {
                         /* Triangulate the top of the wall, it's a border so we are always responsible */
-                        wallMesher.AddQuad(b + wallOffset, a + wallOffset, oa + wallOffset, ob + wallOffset);
+                        wallMesher.AddQuad(b + wallOffset, a + wallOffset, oa + wallOffset, ob + wallOffset);   /* Top of wall */
+                        wallMesher.AddQuad(oa, ob, ob + wallOffset, oa + wallOffset);                           /* Opposite wall */
                     }
                     else
                     {
@@ -484,6 +499,18 @@ public class IrregularMazeGenerator : MonoBehaviour
                 //curr.Neighbors.Remove(endPoint);
                 //endPoint.Neighbors.Remove(curr);
                 endPoint.OpenNeighbors.Add(curr);
+            }
+        }
+
+        /* In addition, knock open some walls to allow for circular paths */
+        for(int i = 0; i < 80; i++)
+        {
+            AdjacencyNode chosen = samples[Random.Range(0, samples.Count)];
+            var index = Random.Range(0, chosen.Neighbors.Count);
+            if (!chosen.ForceClosedNeighbors.Contains(chosen.Neighbors[index]))
+            {
+                chosen.OpenNeighbors.Add(chosen.Neighbors[index]);
+                chosen.Neighbors[index].OpenNeighbors.Add(chosen);
             }
         }
     }

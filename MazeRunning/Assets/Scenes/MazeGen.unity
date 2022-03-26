@@ -255,19 +255,19 @@ MonoBehaviour:
   Seed: 0
   Boundary:
     m_Center: {x: 0, y: 0, z: 0}
-    m_Extent: {x: 150, y: 1, z: 150}
-  MinDistance: 5
-  MinOpenWallLength: 1
-  WallHeight: 3
+    m_Extent: {x: 600, y: 1, z: 600}
+  MinDistance: 15
+  MinOpenWallLength: 8
+  WallHeight: 10
   BorderThickness: 0.1
   pf_Waypoint: {fileID: 5910199848373282456, guid: b3fd0034894a3544aa17388f4c0a9002,
     type: 3}
   FloorFilter: {fileID: 62536539}
   WallFilter: {fileID: 697087360}
-  DrawSites: 1
-  DrawBaseGrid: 1
-  DrawMazeGrid: 1
-  DrawVoronoi: 1
+  DrawSites: 0
+  DrawBaseGrid: 0
+  DrawMazeGrid: 0
+  DrawVoronoi: 0
 --- !u!1 &330585543
 GameObject:
   m_ObjectHideFlags: 0
