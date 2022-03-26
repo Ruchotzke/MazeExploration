@@ -22,9 +22,9 @@ namespace Delaunay.Triangulation
         // public static float2 SUPER_B = new float2(-22f, 22f);
         // public static float2 SUPER_C = new float2(23f, 21f);
         
-        public static float2 SUPER_A = new float2(-250f, -200f);
-        public static float2 SUPER_B = new float2(0, 220f);
-        public static float2 SUPER_C = new float2(250f, -200f);
+        public static float2 SUPER_A = new float2(-2500f, -2000f);
+        public static float2 SUPER_B = new float2(0, 2200f);
+        public static float2 SUPER_C = new float2(2500f, -2000f);
         
         private Mesh mesh;
 

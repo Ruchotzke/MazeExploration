@@ -66,7 +66,7 @@ public class IrregularMazeGenerator : MonoBehaviour
         generatedMesh = triangulator.GenerateTriangulation();
 
         /* Clip out very skinny triangles from the generated triangulation */
-        generatedMesh.RemoveSkinnyTriangles();
+        //generatedMesh.RemoveSkinnyTriangles();
 
         /* Create a voronoi diagram to help in mesh construction */
         generatedVoronoi = generatedMesh.GenerateDualGraph(new float2(Boundary.min.x, Boundary.min.z), new float2(Boundary.max.x, Boundary.max.z));
