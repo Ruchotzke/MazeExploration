@@ -10,22 +10,22 @@ using Random = UnityEngine.Random;
 
 public class IrregularMazeGenerator : MonoBehaviour
 {
-    [Header("Settings")]
+    [Header("Maze Settings")]
     public int Seed;                        /* The random seed used for this maze */
     public Bounds Boundary;                 /* The general rectangular region to shape the maze */
     public float MinDistance = 1.0f;        /* The minimum distance between cells */
     public float MinOpenWallLength = 1.0f;  /* The minimum length a wall must be to be considered for an opening */
     public float WallHeight = 0.5f;         /* The height of the generated walls */
-
     [Range(0.01f, 1.0f)]
     public float BorderThickness = 0.1f;    /* The percentage of the original cells which should become border */
-    
-    [Header("Prefabs")]
-    public Waypoint pf_Waypoint;
 
-    [Header("Mesh Rendering")]
-    public MeshFilter FloorFilter;
-    public MeshFilter WallFilter;
+    [Header("Chunk Settings")]
+    public Vector3 ChunkSize;               /* The size of a chunk in the final triangulation */
+    public Transform ChunkContainer;        /* The object all chunks should be instantiated under */
+
+    [Header("Render Settings")]
+    public Material WallMaterial;
+    public Material FloorMaterial;
 
     [Header("Draw Settings")]
     public bool DrawSites = true;
@@ -33,18 +33,24 @@ public class IrregularMazeGenerator : MonoBehaviour
     public bool DrawMazeGrid = true;
     public bool DrawVoronoi = true;
 
+    /* Triangulation Globals */
     private List<AdjacencyNode> samples;                                /* All adjacency nodes */
     private Dictionary<Edge, List<AdjacencyNode>> edgeToNodeBorder;     /* Convert an edge to a list of adjacency nodes (useful for adjacency graphing) */
     private Dictionary<Polygon, AdjacencyNode> polyToNode;              /* Convert a polygon to it's associated adjacency node */
     private Dictionary<AdjacencyNode, Polygon> nodeToPoly;              /* Convert an adjacency node to its associated polygon */
     private Dictionary<Polygon, List<Edge>> EdgePolygons;               /* A dictionary containing edge polygons (and the edges which are edges) */
+    private Dictionary<Polygon, Polygon> scaledPolygons;                /* The scaled versions of polygons */
+    private HashSet<float2> innerTriangles;                             /* The set of all inner triangles which have been triangulated */
 
+    /* Voronoi Globals */
     private Mesh generatedMesh;
     private List<(float2 site, Polygon polygon)> generatedVoronoi;
 
-    private UnityEngine.Mesh triangulatedFloorMesh;
-    private UnityEngine.Mesh triangulatedWallMesh;
-    
+    /* Chunking Globals */
+    Vector2Int NumChunks;                                               /* The number of chunks present in the final triangulation. (x,y) */
+    MeshFilter[,] WallFilters;                                          /* The mesh filters used to display the final chunk walls */
+    MeshFilter[,] FloorFilters;                                         /* The mesh filters used to display the final chunk flooring */
+    List<AdjacencyNode>[,] ChunkNodes;                                  /* The nodes sorted into their respective chunk's responsibility based on position */
 
     private void Start()
     {
@@ -54,78 +60,171 @@ public class IrregularMazeGenerator : MonoBehaviour
     
     private void GenerateMaze()
     {
+        System.Diagnostics.Stopwatch watch = new System.Diagnostics.Stopwatch();
+        double totalRuntime = 0.0f;
         /* First sample the region where the maze will lie */
+        watch.Start();
         PoissonSampler sampler = new PoissonSampler(new Rect(Boundary.min.x, Boundary.min.z, Boundary.size.x, Boundary.size.z), MinDistance);
         List<Vector2> points = sampler.Sample();
+        watch.Stop();
+        totalRuntime += watch.ElapsedMilliseconds;
+        Debug.Log("Poisson Sampling complete in " + watch.ElapsedMilliseconds + " ms.");
+        watch.Reset();
 
         /* Create a triangulation of the region */
+        watch.Start();
         Triangulator triangulator = new Triangulator();
         foreach (var vertex in points)
         {
             triangulator.AddVertex(vertex);
         }
         generatedMesh = triangulator.GenerateTriangulation();
+        watch.Stop();
+        totalRuntime += watch.ElapsedMilliseconds;
+        Debug.Log("Delaunay complete in " + watch.ElapsedMilliseconds + " ms.");
+        watch.Reset();
 
         /* Clip out very skinny triangles from the generated triangulation */
         //generatedMesh.RemoveSkinnyTriangles();
 
         /* Create a voronoi diagram to help in mesh construction */
+        watch.Start();
         generatedVoronoi = generatedMesh.GenerateDualGraph(new float2(Boundary.min.x, Boundary.min.z), new float2(Boundary.max.x, Boundary.max.z));
+        watch.Stop();
+        totalRuntime += watch.ElapsedMilliseconds;
+        Debug.Log("Voronoi complete in " + watch.ElapsedMilliseconds + " ms.");
+        watch.Reset();
 
-        List<(float2 site, Polygon polygon)> intersection = new List<(float2 site, Polygon polygon)>();
-        foreach(var polygon in generatedVoronoi)
-        {
-            if(math.distance(polygon.site, float2.zero) < 60f)
-            {
-                intersection.Add(polygon);
-            }
-        }
-        foreach(var bad in intersection)
-        {
-            generatedVoronoi.Remove(bad);
-        }
+        //List<(float2 site, Polygon polygon)> intersection = new List<(float2 site, Polygon polygon)>();
+        //foreach(var polygon in generatedVoronoi)
+        //{
+        //    if(math.distance(polygon.site, float2.zero) < 60f)
+        //    {
+        //        intersection.Add(polygon);
+        //    }
+        //}
+        //foreach(var bad in intersection)
+        //{
+        //    generatedVoronoi.Remove(bad);
+        //}
 
         /* Build up an adjacency graph */
+        watch.Start();
         GenerateAdjacencyGraph(MinOpenWallLength);
+        watch.Stop();
+        totalRuntime += watch.ElapsedMilliseconds;
+        Debug.Log("Adjacency generation complete in " + watch.ElapsedMilliseconds + " ms.");
+        watch.Reset();
 
         /* Backtrace over the graph to generate a maze */
+        watch.Start();
         DoBacktrace(samples[0]);
+        watch.Stop();
+        totalRuntime += watch.ElapsedMilliseconds;
+        Debug.Log("Backtrace complete in " + watch.ElapsedMilliseconds + " ms.");
+        watch.Reset();
 
         /* We now have a maze layout picked - we now need to generate a mesh to hold this maze */
-        TriangulateMaze();
+        watch.Start();
+        InitializeTriangulation();
+        
+        for(int x = 0; x < NumChunks.x; x++)
+        {
+            for(int y = 0; y < NumChunks.y; y++)
+            {
+                TriangulateMaze(x, y);
+            }
+        }
 
-        /* Apply this new mesh to the mesh renderer */
-        FloorFilter.mesh = triangulatedFloorMesh;
-        WallFilter.mesh = triangulatedWallMesh;
+        Cleanup();
+        watch.Stop();
+        totalRuntime += watch.ElapsedMilliseconds;
+        Debug.Log("Triangulation Complete in " + watch.ElapsedMilliseconds + " ms.");
+        Debug.Log("Complete Generation: Complete in " + totalRuntime + " ms.");
     }
-    
+
     /// <summary>
-    /// Triangulate a mesh from its voronoi polygons.
+    /// Initialize variables which will be useful for triangulation globally.
     /// </summary>
-    /// <returns></returns>
-    private void TriangulateMaze()
+    private void InitializeTriangulation()
     {
-        Mesher floorMesher = new Mesher();
-        Mesher wallMesher = new Mesher();
-        Vector3 wallOffset = new Vector3(0f, WallHeight, 0f);
+        /* Create necessary containers */
+        scaledPolygons = new Dictionary<Polygon, Polygon>();
+        innerTriangles = new HashSet<float2>();
         float2 scaleFactor = new float2(1.0f - BorderThickness, 1.0f - BorderThickness);
 
-        Dictionary<Polygon, Polygon> scaledPolygons = new Dictionary<Polygon, Polygon>();   /* The scaled versions of polygons */
-        HashSet<float2> innerTriangles = new HashSet<float2>();                             /* The set of all inner triangles which have been triangulated */
+        /* Create information for chunks to be generated later */
+        NumChunks = Vector2Int.CeilToInt(new Vector2(Boundary.size.x, Boundary.size.z) / new Vector2(ChunkSize.x, ChunkSize.z));
+        FloorFilters = new MeshFilter[NumChunks.x, NumChunks.y];
+        WallFilters = new MeshFilter[NumChunks.x, NumChunks.y];
+        ChunkNodes = new List<AdjacencyNode>[NumChunks.x, NumChunks.y];
 
-        /* Shrink each polygon (we need to do it early to ensure we can triangulate bridges */
-        foreach(var node in samples)
+        /* Create chunk containers */
+        for (int x = 0; x < NumChunks.x; x++)
+        {
+            for (int y = 0; y < NumChunks.y; y++)
+            {
+                /* Create a list to contain this chunk's polygons */
+                ChunkNodes[x, y] = new List<AdjacencyNode>();
+
+                /* Create a new container for this chunk's information */
+                GameObject container = new GameObject("Chunk (" + x + ", " + y + ")");
+                container.transform.parent = ChunkContainer;
+
+                /* Create 2 mesh renderer objects as children of this container for rendering chunks */
+                GameObject floorRenderer = new GameObject("Floor Renderer");
+                floorRenderer.transform.parent = container.transform;
+                FloorFilters[x, y] = floorRenderer.AddComponent<MeshFilter>();
+                floorRenderer.AddComponent<MeshRenderer>().material = FloorMaterial;
+
+                GameObject wallRenderer = new GameObject("Wall Renderer");
+                wallRenderer.transform.parent = container.transform;
+                WallFilters[x, y] = wallRenderer.AddComponent<MeshFilter>();
+                wallRenderer.AddComponent<MeshRenderer>().material = WallMaterial;
+            }
+        }
+
+        /* Scale all polygons */
+        /* Also sort polygons while doing this */
+        foreach (var node in samples)
         {
             var polygon = nodeToPoly[node];
 
             /* Scale the polygon down by the given amount */
             var shrunkPolygon = polygon.ScalePolygon(scaleFactor);
             scaledPolygons.Add(polygon, shrunkPolygon);
+
+            /* Sort this polygon into the correct chunk */
+            Vector2Int chunk = Vector2Int.FloorToInt(new Vector2((node.position.x - Boundary.min.x) / ChunkSize.x, (node.position.z - Boundary.min.z) / ChunkSize.z));
+            ChunkNodes[chunk.x, chunk.y].Add(node);
         }
+    }
+
+    /// <summary>
+    /// Cleanup and free memory associated with the triangulation and generation
+    /// of this maze.
+    /// </summary>
+    private void Cleanup()
+    {
+
+    }
+    
+    /// <summary>
+    /// Triangulate a mesh from its voronoi polygons.
+    /// </summary>
+    /// <returns></returns>
+    private void TriangulateMaze(int chunkX, int chunkY)
+    {
+        Mesher floorMesher = new Mesher();
+        Mesher wallMesher = new Mesher();
+        Vector3 wallOffset = new Vector3(0f, WallHeight, 0f);
 
         /* Triangulate each polygon based on its neighbors */
-        foreach(var node in samples)
+        foreach(var node in ChunkNodes[chunkX, chunkY])
         {
+            /* Before anything, if this node is OOB of our area, don't triangulate it */
+            //if (!areaToTriangulate.Contains(node.position)) continue;
+
             var polygon = nodeToPoly[node];
 
             /* Scale the polygon down by the given amount */
@@ -437,8 +536,8 @@ public class IrregularMazeGenerator : MonoBehaviour
         }
 
         /* Our meshes are complete. Finish and assign them */
-        triangulatedFloorMesh = floorMesher.GenerateMesh();
-        triangulatedWallMesh = wallMesher.GenerateMesh();
+        FloorFilters[chunkX, chunkY].mesh = floorMesher.GenerateMesh();
+        WallFilters[chunkX, chunkY].mesh = wallMesher.GenerateMesh();
     }
 
     /// <summary>
