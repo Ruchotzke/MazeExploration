@@ -26,15 +26,17 @@ public class IrregularMazeGenerator : MonoBehaviour
     public MeshFilter FloorFilter;
     public MeshFilter WallFilter;
 
-    [Header("Draw Settings")] 
+    [Header("Draw Settings")]
+    public bool DrawSites = true;
     public bool DrawBaseGrid = true;
     public bool DrawMazeGrid = true;
     public bool DrawVoronoi = true;
 
-    private List<AdjacencyNode> samples;
-    private Dictionary<Edge, List<AdjacencyNode>> edgeToNodeBorder;
-    private Dictionary<Polygon, AdjacencyNode> polyToNode;
-    private Dictionary<AdjacencyNode, Polygon> nodeToPoly;
+    private List<AdjacencyNode> samples;                                /* All adjacency nodes */
+    private Dictionary<Edge, List<AdjacencyNode>> edgeToNodeBorder;     /* Convert an edge to a list of adjacency nodes (useful for adjacency graphing) */
+    private Dictionary<Polygon, AdjacencyNode> polyToNode;              /* Convert a polygon to it's associated adjacency node */
+    private Dictionary<AdjacencyNode, Polygon> nodeToPoly;              /* Convert an adjacency node to its associated polygon */
+    private Dictionary<Polygon, List<Edge>> EdgePolygons;               /* A dictionary containing edge polygons (and the edges which are edges) */
 
     private Mesh generatedMesh;
     private List<(float2 site, Polygon polygon)> generatedVoronoi;
@@ -265,6 +267,83 @@ public class IrregularMazeGenerator : MonoBehaviour
                                     if (!completedPolygon) Debug.LogError("INCOMPLETE INNER TRIANGULATION.");
                                 }
                             }
+
+                            /* Finally, we need to check edge inner triangles. If we are a border node and this wall goes into another border node, we are responsible for triangulating a hole */
+                            if(EdgePolygons.ContainsKey(polygon) && EdgePolygons.ContainsKey(nodeToPoly[opposition]))
+                            {
+                                /* Get the border edge(s) */
+                                var borderEdges = EdgePolygons[polygon];
+                                foreach(var borderEdge in borderEdges)
+                                {
+                                    /* Find the common point between this edge and the border edge. This is the triangle point */
+                                    if (originalEdge.a.Equals(borderEdge.a))
+                                    {
+                                        Vector3 aa = a + wallOffset;
+                                        Vector3 bb = oppAV + wallOffset;
+                                        Vector3 cc = new Vector3(borderEdge.a.x, 0, borderEdge.a.y) + wallOffset;
+                                        float winding = Vector3.Cross(aa - bb, cc - bb).y;
+
+                                        if(winding < 0)
+                                        {
+                                            wallMesher.AddTriangle(aa, bb, cc);
+                                        }
+                                        else
+                                        {
+                                            wallMesher.AddTriangle(aa, cc, bb);
+                                        }
+                                        
+                                    }
+                                    else if (originalEdge.b.Equals(borderEdge.a))
+                                    {
+                                        Vector3 aa = b + wallOffset;
+                                        Vector3 bb = oppBV + wallOffset;
+                                        Vector3 cc = new Vector3(borderEdge.a.x, 0, borderEdge.a.y) + wallOffset;
+                                        float winding = Vector3.Cross(aa - bb, cc - bb).y;
+
+                                        if (winding < 0)
+                                        {
+                                            wallMesher.AddTriangle(aa, bb, cc);
+                                        }
+                                        else
+                                        {
+                                            wallMesher.AddTriangle(aa, cc, bb);
+                                        }
+                                    }
+                                    else if (originalEdge.a.Equals(borderEdge.b))
+                                    {
+                                        Vector3 aa = a + wallOffset;
+                                        Vector3 bb = oppAV + wallOffset;
+                                        Vector3 cc = new Vector3(borderEdge.b.x, 0, borderEdge.b.y) + wallOffset;
+                                        float winding = Vector3.Cross(aa - bb, cc - bb).y;
+
+                                        if (winding < 0)
+                                        {
+                                            wallMesher.AddTriangle(aa, bb, cc);
+                                        }
+                                        else
+                                        {
+                                            wallMesher.AddTriangle(aa, cc, bb);
+                                        }
+                                    }
+                                    else if (originalEdge.b.Equals(borderEdge.b))
+                                    {
+                                        Vector3 aa = b + wallOffset;
+                                        Vector3 bb = oppBV + wallOffset;
+                                        Vector3 cc = new Vector3(borderEdge.b.x, 0, borderEdge.b.y) + wallOffset;
+                                        float winding = Vector3.Cross(aa - bb, cc - bb).y;
+
+                                        if (winding < 0)
+                                        {
+                                            wallMesher.AddTriangle(aa, bb, cc);
+                                        }
+                                        else
+                                        {
+                                            wallMesher.AddTriangle(aa, cc, bb);
+                                        }
+                                    }
+                                }
+                                
+                            }
                         }
                     }
 
@@ -418,6 +497,7 @@ public class IrregularMazeGenerator : MonoBehaviour
         edgeToNodeBorder = new Dictionary<Edge, List<AdjacencyNode>>();
         polyToNode = new Dictionary<Polygon, AdjacencyNode>();
         nodeToPoly = new Dictionary<AdjacencyNode, Polygon>();
+        EdgePolygons = new Dictionary<Polygon, List<Edge>>();
 
         /* Each time an edge is shared update the adjacency graph */
         foreach(var site in generatedVoronoi)
@@ -453,6 +533,24 @@ public class IrregularMazeGenerator : MonoBehaviour
             }
         }
 
+        /* Compile a list of edge polygons for usage in triangulation */
+        foreach(var key in edgeToNodeBorder.Keys)
+        {
+            var nodes = edgeToNodeBorder[key];
+            if(nodes.Count == 1)
+            {
+                /* This is an edge polygon */
+                if (!EdgePolygons.ContainsKey(nodeToPoly[nodes[0]]))
+                {
+                    EdgePolygons.Add(nodeToPoly[nodes[0]], new List<Edge>() { key });
+                }
+                else
+                {
+                    EdgePolygons[nodeToPoly[nodes[0]]].Add(key);
+                }
+            }
+        }
+
         /* Sort each adjacency graph based on angle (useful for triangulation later) */
         //foreach(var node in nodeToPoly.Keys)
         //{
@@ -477,7 +575,7 @@ public class IrregularMazeGenerator : MonoBehaviour
 
     private void OnDrawGizmosSelected()
     {
-        if (samples != null)
+        if (samples != null && DrawSites)
         {
             /* Draw a sphere for each sample */
             foreach (var sample in samples)

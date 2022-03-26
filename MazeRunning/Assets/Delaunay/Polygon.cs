@@ -79,18 +79,26 @@ namespace Delaunay.Geometry
             /* If this is a valid polygon, perform a winding order test */
             if (ValidPolygon)
             {
-                float3 a = new float3(vertices[0], 0.0f);
-                float3 b = new float3(vertices[1], 0.0f);
-                float3 c = new float3(vertices[2], 0.0f);
-                float windingOrder = math.cross(a - b, c - b).z;
-                if (windingOrder < 0) //check the sign of the winding order. if wrong, reverse the polygon to ensure easy triangulation
+                /* First make sure this truly is valid */
+                if(vertices.Count < 3)
                 {
-                    /* Reverse the vertices order */
-                    var oldVerts = vertices;
-                    vertices = new List<float2>();
-                    for (int i = oldVerts.Count - 1; i >= 0; i--)
+                    Debug.LogError("Polygon is degenerate: verts = " + String.Join(", ", vertices));
+                }
+                else
+                {
+                    float3 a = new float3(vertices[0], 0.0f);
+                    float3 b = new float3(vertices[1], 0.0f);
+                    float3 c = new float3(vertices[2], 0.0f);
+                    float windingOrder = math.cross(a - b, c - b).z;
+                    if (windingOrder < 0) //check the sign of the winding order. if wrong, reverse the polygon to ensure easy triangulation
                     {
-                        vertices.Add(oldVerts[i]);
+                        /* Reverse the vertices order */
+                        var oldVerts = vertices;
+                        vertices = new List<float2>();
+                        for (int i = oldVerts.Count - 1; i >= 0; i--)
+                        {
+                            vertices.Add(oldVerts[i]);
+                        }
                     }
                 }
             }
