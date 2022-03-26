@@ -94,7 +94,8 @@ public class IrregularMazeGenerator : MonoBehaviour
         Vector3 wallOffset = new Vector3(0f, WallHeight, 0f);
         float2 scaleFactor = new float2(1.0f - BorderThickness, 1.0f - BorderThickness);
 
-        Dictionary<Polygon, Polygon> scaledPolygons = new Dictionary<Polygon, Polygon>();
+        Dictionary<Polygon, Polygon> scaledPolygons = new Dictionary<Polygon, Polygon>();   /* The scaled versions of polygons */
+        HashSet<float2> innerTriangles = new HashSet<float2>();                             /* The set of all inner triangles which have been triangulated */
 
         /* Shrink each polygon (we need to do it early to ensure we can triangulate bridges */
         foreach(var node in samples)
@@ -159,7 +160,7 @@ public class IrregularMazeGenerator : MonoBehaviour
                     wallMesher.AddQuad(b, a, a + wallOffset, b + wallOffset);
 
                     /* We only need to triangulate the rest if this edge is shared and is +z or z=0 and +x */
-                    if(opposition == null)
+                    if (opposition == null)
                     {
                         /* Triangulate the top of the wall, it's a border so we are always responsible */
                         wallMesher.AddQuad(b + wallOffset, a + wallOffset, oa + wallOffset, ob + wallOffset);
@@ -182,16 +183,92 @@ public class IrregularMazeGenerator : MonoBehaviour
                                 if (aMatchIndex >= 0 && bMatchIndex >= 0) break;
                             }
 
-                            /* Triangulate the floor across the gap */
+                            /* Triangulate the top of the wall */
                             float2 oppA = scaledPolygons[otherPoly].vertices[aMatchIndex];
                             float2 oppB = scaledPolygons[otherPoly].vertices[bMatchIndex];
                             Vector3 oppAV = new Vector3(oppA.x, 0, oppA.y);
                             Vector3 oppBV = new Vector3(oppB.x, 0, oppB.y);
                             wallMesher.AddQuad(b + wallOffset, a + wallOffset, oppAV + wallOffset, oppBV + wallOffset);
+
+                            /* We might also need to triangulate one or two inner triangles. Perform a shared edge test */
+                            /* Triangle holes are formed by 3 closed edges in a triangle. Detect this condition */
+                            List<AdjacencyNode> sharedNodes = new List<AdjacencyNode>();
+                            foreach(var neighbor in node.Neighbors)
+                            {
+                                if (!node.OpenNeighbors.Contains(neighbor))
+                                {
+                                    if (opposition.Neighbors.Contains(neighbor))
+                                    {
+                                        if (!opposition.OpenNeighbors.Contains(neighbor))
+                                        {
+                                            /* This must be a shared node */
+                                            sharedNodes.Add(neighbor);
+                                        }
+                                    }
+                                }
+                            }
+
+                            /* For each shared node, we will potentially need to triangulate an inner triangle. */
+                            /* Detect the shared vertex for each shared triangle */
+                            if(sharedNodes.Count > 0)
+                            {
+                                Polygon oppositionPolygon = nodeToPoly[opposition];
+                                foreach (var shared in sharedNodes)
+                                {
+                                    Polygon sharedPolygon = nodeToPoly[shared];
+                                    bool completedPolygon = false;
+
+                                    /* Find the shared vertex between the three polygons. AT MOST ONE! */
+                                    for(int nodeIndex = 0; nodeIndex < polygon.vertices.Count && !completedPolygon; nodeIndex++)
+                                    {
+                                        float2 nodeVertex = polygon.vertices[nodeIndex];
+                                        for(int oppIndex = 0; oppIndex < oppositionPolygon.vertices.Count && !completedPolygon; oppIndex++)
+                                        {
+                                            float2 oppVertex = oppositionPolygon.vertices[oppIndex];
+                                            for(int sharedIndex = 0; sharedIndex < sharedPolygon.vertices.Count && !completedPolygon; sharedIndex++)
+                                            {
+                                                float2 sharedVertex = sharedPolygon.vertices[sharedIndex];
+                                                if(sharedVertex.Equals(oppVertex) && sharedVertex.Equals(nodeVertex))
+                                                {
+                                                    /* We found the vertex. Now check if this hole has already been filled */
+                                                    if (!innerTriangles.Contains(sharedVertex))
+                                                    {
+                                                        /* This hole is empty. Triangulate it */
+                                                        innerTriangles.Add(sharedVertex);
+                                                        Vector3 nodePos = new Vector3(scaledPolygons[polygon].vertices[nodeIndex].x, 0, scaledPolygons[polygon].vertices[nodeIndex].y) + wallOffset;
+                                                        Vector3 oppPos = new Vector3(scaledPolygons[oppositionPolygon].vertices[oppIndex].x, 0, scaledPolygons[oppositionPolygon].vertices[oppIndex].y) + wallOffset;
+                                                        Vector3 sharedPos = new Vector3(scaledPolygons[sharedPolygon].vertices[sharedIndex].x, 0, scaledPolygons[sharedPolygon].vertices[sharedIndex].y) + wallOffset;
+
+                                                        /* Check winding order to ensure the normal faces upwards */
+                                                        bool windingOrder = Vector3.Cross(nodePos - sharedPos, oppPos - sharedPos).y < 0;
+
+                                                        if (windingOrder)
+                                                        {
+                                                            wallMesher.AddTriangle(nodePos, sharedPos, oppPos);
+                                                        }
+                                                        else
+                                                        {
+                                                            wallMesher.AddTriangle(nodePos, oppPos, sharedPos);
+                                                        }
+                                                        
+                                                    }
+
+                                                    /* No matter what, these polygons are covered. Move onto the next polygon */
+                                                    completedPolygon = true;
+                                                    break;
+                                                }
+                                            }
+                                        }
+                                    }
+
+                                    /* This polygon is done. If it wasn't for some reason, report an error */
+                                    if (!completedPolygon) Debug.LogError("INCOMPLETE INNER TRIANGULATION.");
+                                }
+                            }
                         }
                     }
 
-                    
+
                 }
                 else
                 {
@@ -220,8 +297,45 @@ public class IrregularMazeGenerator : MonoBehaviour
                         floorMesher.AddQuad(b, a, oppAV, oppBV);
 
                         /* Triangulate the wall pieces left */
-                        //wallMesher.AddQuad(a, halfA, halfA + wallOffset, a + wallOffset);
-                        //wallMesher.AddQuad(b, halfB, halfB + wallOffset, b + wallOffset);
+                        wallMesher.AddQuad(b, oppBV, oppBV + wallOffset, b + wallOffset);   /* Right wall */
+                        wallMesher.AddQuad(oppAV, a, a + wallOffset, oppAV + wallOffset);   /* Left wall */
+
+                        /* We also need to triangulate triangles to fill in top gaps. find matching indices again */
+                        Polygon leftPoly = null, rightPoly = null;
+                        int leftIndex = -1, rightIndex = -1;
+                        foreach (var neighbor in node.Neighbors)
+                        {
+                            if (neighbor == opposition) continue; //we don't need to search our bridge neighbor
+                            var neighborPoly = nodeToPoly[neighbor];
+                            for (int index = 0; index < neighborPoly.vertices.Count; index++)
+                            {
+                                if (leftPoly == null && neighborPoly.vertices[index].Equals(originalEdge.a))
+                                {
+                                    leftIndex = index;
+                                    leftPoly = neighborPoly;
+                                    break; //this polygon is done - we found a match
+                                }
+                                if (rightPoly == null && neighborPoly.vertices[index].Equals(originalEdge.b))
+                                {
+                                    rightIndex = index;
+                                    rightPoly = neighborPoly;
+                                    break; //this polygon is done - we found a match
+                                }
+                            }
+
+                            if (rightPoly != null && leftPoly != null) break; //we found what we needed
+                        }
+                        /* NOTE: At this point, if either is null, that implies this is an edge triangle, so no scaling is needed */
+
+                        /* We now have our final triangle to complete */
+                        float2 leftMatch = leftPoly != null ? scaledPolygons[leftPoly].vertices[leftIndex] : originalEdge.a;
+                        float2 rightMatch = rightPoly != null ? scaledPolygons[rightPoly].vertices[rightIndex] : originalEdge.b;
+                        Vector3 leftV = new Vector3(leftMatch.x, 0, leftMatch.y);
+                        Vector3 rightV = new Vector3(rightMatch.x, 0, rightMatch.y);
+
+                        wallMesher.AddTriangle(oppAV + wallOffset, a + wallOffset, leftV + wallOffset);
+                        wallMesher.AddTriangle(b + wallOffset, oppBV + wallOffset, rightV + wallOffset);
+
                     }
                 }
             }
@@ -288,8 +402,8 @@ public class IrregularMazeGenerator : MonoBehaviour
                 /* We moved to a neighbor - mark that movement as a valid path */
                 var endPoint = stack.Peek();
                 curr.OpenNeighbors.Add(endPoint);
-                curr.Neighbors.Remove(endPoint);
-                endPoint.Neighbors.Remove(curr);
+                //curr.Neighbors.Remove(endPoint);
+                //endPoint.Neighbors.Remove(curr);
                 endPoint.OpenNeighbors.Add(curr);
             }
         }
@@ -338,6 +452,22 @@ public class IrregularMazeGenerator : MonoBehaviour
                 }
             }
         }
+
+        /* Sort each adjacency graph based on angle (useful for triangulation later) */
+        //foreach(var node in nodeToPoly.Keys)
+        //{
+        //    node.Neighbors.Sort((a, b) =>
+        //    {
+        //        var va = (a.position - node.position).normalized;
+        //        var vb = (b.position - node.position).normalized;
+
+        //        var aAngle = Mathf.Acos(Vector3.Dot(va, Vector3.right));
+        //        var bAngle = Mathf.Acos(Vector3.Dot(vb, Vector3.right));
+
+        //        return aAngle.CompareTo(bAngle);
+        //    });
+        //}
+        //TODO: Implement this sorting later as an optimization
 
         /* Create a normal list to store the adjacency nodes into */
         samples = new List<AdjacencyNode>();
