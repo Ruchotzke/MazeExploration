@@ -1,6 +1,7 @@
 {
   "dependencies": {
     "com.ruchotzke.general-unity-utils": "https://github.com/Ruchotzke/General-Unity-Utilities.git",
+    "com.unity.ai.navigation": "1.0.0-exp.4",
     "com.unity.collab-proxy": "1.15.4",
     "com.unity.feature.characters-animation": "1.0.0",
     "com.unity.feature.worldbuilding": "1.0.1",
