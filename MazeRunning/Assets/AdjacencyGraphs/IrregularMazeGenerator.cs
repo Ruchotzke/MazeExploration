@@ -7,6 +7,7 @@ using Utilities;
 using Utilities.Meshing;
 using Mesh = Delaunay.Triangulation.Mesh;
 using Random = UnityEngine.Random;
+using Unity.AI.Navigation;
 
 public class IrregularMazeGenerator : MonoBehaviour
 {
@@ -23,7 +24,7 @@ public class IrregularMazeGenerator : MonoBehaviour
 
     [Header("Chunk Settings")]
     public Vector3 ChunkSize;               /* The size of a chunk in the final triangulation */
-    public Transform ChunkContainer;        /* The object all chunks should be instantiated under */
+    public NavMeshSurface ChunkContainer;   /* The object all chunks should be instantiated under */
 
     [Header("Render Settings")]
     public Material WallMaterial;
@@ -145,6 +146,15 @@ public class IrregularMazeGenerator : MonoBehaviour
         watch.Stop();
         totalRuntime += watch.ElapsedMilliseconds;
         Debug.Log("Triangulation Complete in " + watch.ElapsedMilliseconds + " ms.");
+
+        /* Finally, we need to generate the navmesh to allow for navigation through the maze */
+        watch.Start();
+        ChunkContainer.BuildNavMesh();
+        watch.Stop();
+        totalRuntime += watch.ElapsedMilliseconds;
+        Debug.Log("Navigation complete in " + watch.ElapsedMilliseconds + " ms.");
+
+        /* Report the final time. */
         Debug.Log("Complete Generation: Complete in " + totalRuntime + " ms.");
     }
 
@@ -176,7 +186,7 @@ public class IrregularMazeGenerator : MonoBehaviour
 
                 /* Create a new container for this chunk's information */
                 GameObject container = new GameObject("Chunk (" + x + ", " + y + ")");
-                container.transform.parent = ChunkContainer;
+                container.transform.parent = ChunkContainer.transform;
 
                 /* Create 2 mesh renderer objects as children of this container for rendering chunks */
                 /* Also add mesh colliders to each */
