@@ -1,7 +1,5 @@
 ﻿using System.Collections.Generic;
-using Codice.Client.GameUI.Update;
 using Delaunay.Geometry;
-using PlasticGui.WorkspaceWindow.BranchExplorer;
 using Unity.Mathematics;
 using UnityEngine;
 
