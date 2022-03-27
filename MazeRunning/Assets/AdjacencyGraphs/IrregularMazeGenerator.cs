@@ -18,6 +18,8 @@ public class IrregularMazeGenerator : MonoBehaviour
     public float WallHeight = 0.5f;         /* The height of the generated walls */
     [Range(0.01f, 1.0f)]
     public float BorderThickness = 0.1f;    /* The percentage of the original cells which should become border */
+    [Range(0f, 1f)]
+    public float WallRemovePercentage;      /* The percentage of the total walls which should be removed */
 
     [Header("Chunk Settings")]
     public Vector3 ChunkSize;               /* The size of a chunk in the final triangulation */
@@ -34,6 +36,7 @@ public class IrregularMazeGenerator : MonoBehaviour
     public bool DrawVoronoi = true;
 
     /* Triangulation Globals */
+    int edgeCount = 0;                                                  /* The count of the total number of the edges in the maze, roughly doubled */
     private List<AdjacencyNode> samples;                                /* All adjacency nodes */
     private Dictionary<Edge, List<AdjacencyNode>> edgeToNodeBorder;     /* Convert an edge to a list of adjacency nodes (useful for adjacency graphing) */
     private Dictionary<Polygon, AdjacencyNode> polyToNode;              /* Convert a polygon to it's associated adjacency node */
@@ -50,6 +53,8 @@ public class IrregularMazeGenerator : MonoBehaviour
     Vector2Int NumChunks;                                               /* The number of chunks present in the final triangulation. (x,y) */
     MeshFilter[,] WallFilters;                                          /* The mesh filters used to display the final chunk walls */
     MeshFilter[,] FloorFilters;                                         /* The mesh filters used to display the final chunk flooring */
+    MeshCollider[,] WallColliders;                                      /* The mesh colliders used on the walls */
+    MeshCollider[,] FloorColliders;                                     /* The mesh colliders used on the floors */
     List<AdjacencyNode>[,] ChunkNodes;                                  /* The nodes sorted into their respective chunk's responsibility based on position */
 
     private void Start()
@@ -157,6 +162,8 @@ public class IrregularMazeGenerator : MonoBehaviour
         NumChunks = Vector2Int.CeilToInt(new Vector2(Boundary.size.x, Boundary.size.z) / new Vector2(ChunkSize.x, ChunkSize.z));
         FloorFilters = new MeshFilter[NumChunks.x, NumChunks.y];
         WallFilters = new MeshFilter[NumChunks.x, NumChunks.y];
+        FloorColliders = new MeshCollider[NumChunks.x, NumChunks.y];
+        WallColliders = new MeshCollider[NumChunks.x, NumChunks.y];
         ChunkNodes = new List<AdjacencyNode>[NumChunks.x, NumChunks.y];
 
         /* Create chunk containers */
@@ -172,15 +179,18 @@ public class IrregularMazeGenerator : MonoBehaviour
                 container.transform.parent = ChunkContainer;
 
                 /* Create 2 mesh renderer objects as children of this container for rendering chunks */
+                /* Also add mesh colliders to each */
                 GameObject floorRenderer = new GameObject("Floor Renderer");
                 floorRenderer.transform.parent = container.transform;
                 FloorFilters[x, y] = floorRenderer.AddComponent<MeshFilter>();
                 floorRenderer.AddComponent<MeshRenderer>().material = FloorMaterial;
+                FloorColliders[x, y] = floorRenderer.AddComponent<MeshCollider>();
 
                 GameObject wallRenderer = new GameObject("Wall Renderer");
                 wallRenderer.transform.parent = container.transform;
                 WallFilters[x, y] = wallRenderer.AddComponent<MeshFilter>();
                 wallRenderer.AddComponent<MeshRenderer>().material = WallMaterial;
+                WallColliders[x,y] = wallRenderer.AddComponent<MeshCollider>();
             }
         }
 
@@ -536,8 +546,16 @@ public class IrregularMazeGenerator : MonoBehaviour
         }
 
         /* Our meshes are complete. Finish and assign them */
-        FloorFilters[chunkX, chunkY].mesh = floorMesher.GenerateMesh();
-        WallFilters[chunkX, chunkY].mesh = wallMesher.GenerateMesh();
+        var floorMesh = floorMesher.GenerateMesh();
+        var wallMesh = wallMesher.GenerateMesh();
+
+        floorMesh.name = "Floor Mesh (" + chunkX + ", " + chunkY + ")";
+        wallMesh.name = "Wall Mesh (" + chunkX + ", " + chunkY + ")";
+
+        FloorFilters[chunkX, chunkY].sharedMesh = floorMesh;
+        WallFilters[chunkX, chunkY].sharedMesh = wallMesh;
+        FloorColliders[chunkX, chunkY].sharedMesh = floorMesh;
+        WallColliders[chunkX, chunkY].sharedMesh = wallMesh;
     }
 
     /// <summary>
@@ -602,14 +620,31 @@ public class IrregularMazeGenerator : MonoBehaviour
         }
 
         /* In addition, knock open some walls to allow for circular paths */
-        for(int i = 0; i < 80; i++)
+        int edgesToRemove = Mathf.FloorToInt((edgeCount / 2.0f) * WallRemovePercentage);
+        for(int i = 0; i < edgesToRemove; i++)
         {
             AdjacencyNode chosen = samples[Random.Range(0, samples.Count)];
             var index = Random.Range(0, chosen.Neighbors.Count);
             if (!chosen.ForceClosedNeighbors.Contains(chosen.Neighbors[index]))
             {
-                chosen.OpenNeighbors.Add(chosen.Neighbors[index]);
-                chosen.Neighbors[index].OpenNeighbors.Add(chosen);
+                /* Also check if breaking open this edge would form a triangle */
+                var other = chosen.Neighbors[index];
+                bool breakEdge = true;
+                foreach(var neighbor in chosen.OpenNeighbors)
+                {
+                    if (other.OpenNeighbors.Contains(neighbor))
+                    {
+                        /* This would make a triangle. We don't want to break this edge */
+                        breakEdge = false;
+                        break;
+                    }
+                }
+
+                if (breakEdge)
+                {
+                    chosen.OpenNeighbors.Add(other);
+                    other.OpenNeighbors.Add(chosen);
+                }
             }
         }
     }
@@ -627,13 +662,15 @@ public class IrregularMazeGenerator : MonoBehaviour
 
         /* Each time an edge is shared update the adjacency graph */
         Collider[] nonAlloc = new Collider[2];
+        edgeCount = 0;
         foreach(var site in generatedVoronoi)
         {
             Polygon poly = site.polygon;
 
             /* Check to see if this polygon should even be used */
             bool usePolygon = true;
-            foreach (var edge in poly.GetEdges())
+            var edges = poly.GetEdges();
+            foreach (var edge in edges)
             {
                 /* check a */
                 if(Physics.OverlapBoxNonAlloc(new Vector3(edge.a.x, 0, edge.a.y), 0.5f * Vector3.one, nonAlloc, Quaternion.identity, LayerMask.GetMask("Maze Obstacle")) > 0)
@@ -655,6 +692,9 @@ public class IrregularMazeGenerator : MonoBehaviour
                 }
             }
             if (!usePolygon) continue;
+
+            /* Record the number of edges into a counter for help in making the maze easier */
+            edgeCount += edges.Count;
 
             /* Record this polygon into an adjacency node */
             AdjacencyNode node = new AdjacencyNode(new Vector3(site.site.x, 0, site.site.y));

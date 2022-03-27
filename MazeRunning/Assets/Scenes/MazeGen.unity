@@ -170,11 +170,12 @@ MonoBehaviour:
   Seed: 0
   Boundary:
     m_Center: {x: 0, y: 0, z: 0}
-    m_Extent: {x: 500, y: 1, z: 500}
+    m_Extent: {x: 300, y: 1, z: 300}
   MinDistance: 15
   MinOpenWallLength: 8
   WallHeight: 10
   BorderThickness: 0.1
+  WallRemovePercentage: 0.1
   ChunkSize: {x: 300, y: 300, z: 300}
   ChunkContainer: {fileID: 318650192}
   WallMaterial: {fileID: 2100000, guid: 91e02e1a9126d414b8979a65437c1d7c, type: 2}
