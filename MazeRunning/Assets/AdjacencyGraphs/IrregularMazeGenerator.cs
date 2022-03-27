@@ -626,9 +626,35 @@ public class IrregularMazeGenerator : MonoBehaviour
         EdgePolygons = new Dictionary<Polygon, List<Edge>>();
 
         /* Each time an edge is shared update the adjacency graph */
+        Collider[] nonAlloc = new Collider[2];
         foreach(var site in generatedVoronoi)
         {
             Polygon poly = site.polygon;
+
+            /* Check to see if this polygon should even be used */
+            bool usePolygon = true;
+            foreach (var edge in poly.GetEdges())
+            {
+                /* check a */
+                if(Physics.OverlapBoxNonAlloc(new Vector3(edge.a.x, 0, edge.a.y), 0.5f * Vector3.one, nonAlloc, Quaternion.identity, LayerMask.GetMask("Maze Obstacle")) > 0)
+                {
+                    /* Bad point */
+                    usePolygon = false;
+                    break;
+                }
+
+                /* Check edge */
+                float2 dir = edge.b - edge.a;
+                float magnitude = math.length(dir);
+                dir = math.normalize(dir);
+                if (Physics.Raycast(new Ray(new Vector3(edge.a.x, 0, edge.a.y), new Vector3(dir.x, 0, dir.y)), magnitude, LayerMask.GetMask("Maze Obstacle")))
+                {
+                    /* Bad edge */
+                    usePolygon = false;
+                    break;
+                }
+            }
+            if (!usePolygon) continue;
 
             /* Record this polygon into an adjacency node */
             AdjacencyNode node = new AdjacencyNode(new Vector3(site.site.x, 0, site.site.y));

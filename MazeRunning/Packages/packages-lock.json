@@ -7,6 +7,13 @@
       "dependencies": {},
       "url": "https://packages.unity.com"
     },
+    "com.ruchotzke.general-unity-utils": {
+      "version": "https://github.com/Ruchotzke/General-Unity-Utilities.git",
+      "depth": 0,
+      "source": "git",
+      "dependencies": {},
+      "hash": "2de20482631944b2942b0bd3fe42ec3082cfa63f"
+    },
     "com.unity.animation.rigging": {
       "version": "1.1.1",
       "depth": 1,
