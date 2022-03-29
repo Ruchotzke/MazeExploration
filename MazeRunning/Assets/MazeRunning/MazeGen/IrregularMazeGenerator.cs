@@ -30,6 +30,7 @@ namespace MazeRunning.MazeGen
         public NavMeshSurface ChunkContainer;   /* The object all chunks should be instantiated under */
 
         [Header("Render Settings")]
+        public bool TriangulateFloor = true;    /* Should the floor of this maze be triangulated? */
         public Material WallMaterial;
         public Material FloorMaterial;
 
@@ -46,9 +47,10 @@ namespace MazeRunning.MazeGen
         private Dictionary<Edge, List<AdjacencyNode>> edgeToNodeBorder;     /* Convert an edge to a list of adjacency nodes (useful for adjacency graphing) */
         private Dictionary<Polygon, AdjacencyNode> polyToNode;              /* Convert a polygon to it's associated adjacency node */
         private Dictionary<AdjacencyNode, Polygon> nodeToPoly;              /* Convert an adjacency node to its associated polygon */
-        private Dictionary<Polygon, List<Edge>> EdgePolygons;               /* A dictionary containing edge polygons (and the edges which are edges) */
+        private Dictionary<Polygon, List<Edge>> edgePolygons;               /* A dictionary containing edge polygons (and the edges which are edges) */
         private Dictionary<Polygon, Polygon> scaledPolygons;                /* The scaled versions of polygons */
         private HashSet<float2> innerTriangles;                             /* The set of all inner triangles which have been triangulated */
+        private List<Polygon> centerPolygons;                               /* The polygons which were removed from the colliders, useful to triangulate later */
 
         /* Voronoi Globals */
         private Mesh generatedMesh;
@@ -142,7 +144,7 @@ namespace MazeRunning.MazeGen
                     {
                         for (int y = 0; y < NumChunks.y; y++)
                         {
-                            TriangulateMaze(x, y);
+                            TriangulateMazeChunk(x, y);
                         }
                     }
                     Cleanup();
@@ -153,6 +155,9 @@ namespace MazeRunning.MazeGen
                 Debug.Log("Triangulation Complete in " + watch.ElapsedMilliseconds + " ms.");
                 watch.Reset();
             }
+
+            /* The center needs to have a floor to contain the hub - triangulate it */
+            TriangulateCenter();
 
             /* Finally, we need to generate the navmesh to allow for navigation through the maze */
             if (ProfileMazeGeneration) watch.Start();
@@ -167,6 +172,37 @@ namespace MazeRunning.MazeGen
 
             /* Report the final time. */
             if (ProfileMazeGeneration) Debug.Log("Complete Generation: Complete in " + totalRuntime + " ms.");
+        }
+
+        /// <summary>
+        /// Triangulate the central region which contains the removed polygons.
+        /// Useful for a hub region.
+        /// </summary>
+        private void TriangulateCenter()
+        {
+            /* Create a central floor mesh object */
+            GameObject centerObj = new GameObject("Center Floor");
+            centerObj.transform.parent = ChunkContainer.transform;
+            var filter = centerObj.AddComponent<MeshFilter>();
+            centerObj.AddComponent<MeshRenderer>().material = FloorMaterial;
+            var collider = centerObj.AddComponent<MeshCollider>();
+
+            /* Mesh the floor */
+            Mesher mesher = new Mesher();
+            foreach(var poly in centerPolygons)
+            {
+                Vector3 root = new Vector3(poly.vertices[0].x, 0, poly.vertices[0].y);
+                for(int i = 1; i < poly.vertices.Count - 1; i++)
+                {
+                    mesher.AddTriangle(root, new Vector3(poly.vertices[i].x, 0, poly.vertices[i].y), new Vector3(poly.vertices[i+1].x, 0, poly.vertices[i+1].y));
+                }
+            }
+
+            /* Finish the mesh off */
+            var mesh = mesher.GenerateMesh();
+            mesh.name = "Central Floor";
+            filter.sharedMesh = mesh;
+            collider.sharedMesh = mesh;
         }
 
         /// <summary>
@@ -201,11 +237,14 @@ namespace MazeRunning.MazeGen
 
                     /* Create 2 mesh renderer objects as children of this container for rendering chunks */
                     /* Also add mesh colliders to each */
-                    GameObject floorRenderer = new GameObject("Floor Renderer");
-                    floorRenderer.transform.parent = container.transform;
-                    FloorFilters[x, y] = floorRenderer.AddComponent<MeshFilter>();
-                    floorRenderer.AddComponent<MeshRenderer>().material = FloorMaterial;
-                    FloorColliders[x, y] = floorRenderer.AddComponent<MeshCollider>();
+                    if (TriangulateFloor)
+                    {
+                        GameObject floorRenderer = new GameObject("Floor Renderer");
+                        floorRenderer.transform.parent = container.transform;
+                        FloorFilters[x, y] = floorRenderer.AddComponent<MeshFilter>();
+                        floorRenderer.AddComponent<MeshRenderer>().material = FloorMaterial;
+                        FloorColliders[x, y] = floorRenderer.AddComponent<MeshCollider>();
+                    }
 
                     GameObject wallRenderer = new GameObject("Wall Renderer");
                     wallRenderer.transform.parent = container.transform;
@@ -244,7 +283,7 @@ namespace MazeRunning.MazeGen
         /// Triangulate a mesh from its voronoi polygons.
         /// </summary>
         /// <returns></returns>
-        private void TriangulateMaze(int chunkX, int chunkY)
+        private void TriangulateMazeChunk(int chunkX, int chunkY)
         {
             Mesher floorMesher = new Mesher();
             Mesher wallMesher = new Mesher();
@@ -262,14 +301,17 @@ namespace MazeRunning.MazeGen
                 var shrunkPolygon = scaledPolygons[polygon];
 
                 /* Triangulate the floor of the polygon */
-                for (int i = 1; i < shrunkPolygon.vertices.Count - 1; i++)
+                if (TriangulateFloor)
                 {
-                    /* Triangle fan */
-                    var a = shrunkPolygon.vertices[0];
-                    var b = shrunkPolygon.vertices[i];
-                    var c = shrunkPolygon.vertices[i + 1];
+                    for (int i = 1; i < shrunkPolygon.vertices.Count - 1; i++)
+                    {
+                        /* Triangle fan */
+                        var a = shrunkPolygon.vertices[0];
+                        var b = shrunkPolygon.vertices[i];
+                        var c = shrunkPolygon.vertices[i + 1];
 
-                    floorMesher.AddTriangle(a, b, c);
+                        floorMesher.AddTriangle(a, b, c);
+                    }
                 }
 
                 /* Triangulate the walls of the polygon */
@@ -414,10 +456,10 @@ namespace MazeRunning.MazeGen
                                 }
 
                                 /* Finally, we need to check edge inner triangles. If we are a border node and this wall goes into another border node, we are responsible for triangulating a hole */
-                                if (EdgePolygons.ContainsKey(polygon) && EdgePolygons.ContainsKey(nodeToPoly[opposition]))
+                                if (edgePolygons.ContainsKey(polygon) && edgePolygons.ContainsKey(nodeToPoly[opposition]))
                                 {
                                     /* Get the border edge(s) */
-                                    var borderEdges = EdgePolygons[polygon];
+                                    var borderEdges = edgePolygons[polygon];
                                     foreach (var borderEdge in borderEdges)
                                     {
                                         /* Find the common point between this edge and the border edge. This is the triangle point */
@@ -518,7 +560,7 @@ namespace MazeRunning.MazeGen
                             float2 oppB = scaledPolygons[otherPoly].vertices[bMatchIndex];
                             Vector3 oppAV = new Vector3(oppA.x, 0, oppA.y);
                             Vector3 oppBV = new Vector3(oppB.x, 0, oppB.y);
-                            floorMesher.AddQuad(b, a, oppAV, oppBV);
+                            if(TriangulateFloor) floorMesher.AddQuad(b, a, oppAV, oppBV);
 
                             /* Triangulate the wall pieces left */
                             wallMesher.AddQuad(b, oppBV, oppBV + wallOffset, b + wallOffset);   /* Right wall */
@@ -567,15 +609,16 @@ namespace MazeRunning.MazeGen
             }
 
             /* Our meshes are complete. Finish and assign them */
-            var floorMesh = floorMesher.GenerateMesh();
+            if (TriangulateFloor)
+            {
+                var floorMesh = floorMesher.GenerateMesh();
+                floorMesh.name = "Floor Mesh (" + chunkX + ", " + chunkY + ")";
+                FloorFilters[chunkX, chunkY].sharedMesh = floorMesh;
+                FloorColliders[chunkX, chunkY].sharedMesh = floorMesh;
+            }
             var wallMesh = wallMesher.GenerateMesh();
-
-            floorMesh.name = "Floor Mesh (" + chunkX + ", " + chunkY + ")";
             wallMesh.name = "Wall Mesh (" + chunkX + ", " + chunkY + ")";
-
-            FloorFilters[chunkX, chunkY].sharedMesh = floorMesh;
             WallFilters[chunkX, chunkY].sharedMesh = wallMesh;
-            FloorColliders[chunkX, chunkY].sharedMesh = floorMesh;
             WallColliders[chunkX, chunkY].sharedMesh = wallMesh;
         }
 
@@ -679,7 +722,8 @@ namespace MazeRunning.MazeGen
             edgeToNodeBorder = new Dictionary<Edge, List<AdjacencyNode>>();
             polyToNode = new Dictionary<Polygon, AdjacencyNode>();
             nodeToPoly = new Dictionary<AdjacencyNode, Polygon>();
-            EdgePolygons = new Dictionary<Polygon, List<Edge>>();
+            edgePolygons = new Dictionary<Polygon, List<Edge>>();
+            centerPolygons = new List<Polygon>();
 
             /* Each time an edge is shared update the adjacency graph */
             Collider[] nonAlloc = new Collider[2];
@@ -712,7 +756,12 @@ namespace MazeRunning.MazeGen
                         break;
                     }
                 }
-                if (!usePolygon) continue;
+                if (!usePolygon)
+                {
+                    /* Mark this polygon as a collider polygon and don't put it in adjacency */
+                    centerPolygons.Add(poly);
+                    continue;
+                }
 
                 /* Record the number of edges into a counter for help in making the maze easier */
                 edgeCount += edges.Count;
@@ -753,32 +802,16 @@ namespace MazeRunning.MazeGen
                 if (nodes.Count == 1)
                 {
                     /* This is an edge polygon */
-                    if (!EdgePolygons.ContainsKey(nodeToPoly[nodes[0]]))
+                    if (!edgePolygons.ContainsKey(nodeToPoly[nodes[0]]))
                     {
-                        EdgePolygons.Add(nodeToPoly[nodes[0]], new List<Edge>() { key });
+                        edgePolygons.Add(nodeToPoly[nodes[0]], new List<Edge>() { key });
                     }
                     else
                     {
-                        EdgePolygons[nodeToPoly[nodes[0]]].Add(key);
+                        edgePolygons[nodeToPoly[nodes[0]]].Add(key);
                     }
                 }
             }
-
-            /* Sort each adjacency graph based on angle (useful for triangulation later) */
-            //foreach(var node in nodeToPoly.Keys)
-            //{
-            //    node.Neighbors.Sort((a, b) =>
-            //    {
-            //        var va = (a.position - node.position).normalized;
-            //        var vb = (b.position - node.position).normalized;
-
-            //        var aAngle = Mathf.Acos(Vector3.Dot(va, Vector3.right));
-            //        var bAngle = Mathf.Acos(Vector3.Dot(vb, Vector3.right));
-
-            //        return aAngle.CompareTo(bAngle);
-            //    });
-            //}
-            //TODO: Implement this sorting later as an optimization
 
             /* Create a normal list to store the adjacency nodes into */
             samples = new List<AdjacencyNode>();
